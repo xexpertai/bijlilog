@@ -3,13 +3,13 @@ import assert from "node:assert/strict";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { createRelay } from "../server/relay.js";
 import { signAction, canonicalMessage, verifySigned, parseMessage } from "../src/lib/signing.js";
-import { PROJECT } from "../src/lib/schema.js";
+import { PROJECT, SEAL_ADDRESS } from "../src/lib/schema.js";
 
 const RELAY = privateKeyToAccount(generatePrivateKey());
 const NOW = Date.UTC(2026, 9, 12, 14, 0);
 const OUT = "0x" + "ab".repeat(32);
 
-function mocks({ entity = null, liveOutage = false, confirms = [], cutLog = false } = {}) {
+function mocks({ entity = null, liveOutage = false, confirms = [], cutLog = false, predict = false } = {}) {
   const calls = [];
   const page = (entities) => ({ entities, hasNextPage: () => false });
   const builder = (pred) => {
@@ -22,6 +22,7 @@ function mocks({ entity = null, liveOutage = false, confirms = [], cutLog = fals
   const publicClient = {
     getEntity: async () => { if (!entity) throw new Error("NoEntityFound"); return entity; },
     select: () => ({ where: (p) => builder(p.map((x) => JSON.stringify(x))) }),
+    ...(predict && { predictEntityKeys: async () => [{ key: "0xseal", salt: 7n }] }),
   };
   const walletClient = {
     account: RELAY,
@@ -104,7 +105,8 @@ test("backfill validated; daily device limit enforced", async () => {
   const m = mocks(); const relay = createRelay({ ...m, now: () => NOW, limits: { perDevicePerDay: 2 } });
   await assert.rejects(relay.handle(await signed(dev, { action: "backfill", started_at_ms: NOW - 3600e3, ended_at_ms: NOW - 7200e3 })), { status: 400 });
   await relay.handle(await signed(dev, { action: "backfill", started_at_ms: NOW - 3 * 3600e3, ended_at_ms: NOW - 3600e3, note: "x" }));
-  assert.equal(m.calls[0][1].attributes.origin.value, "backfill");
+  assert.equal(m.calls[0][0], "batch");
+  assert.equal(m.calls[0][1].creates[0].attributes.origin.value, "backfill");
   await assert.rejects(relay.handle(await signed(dev, { action: "backfill", started_at_ms: NOW - 5 * 3600e3, ended_at_ms: NOW - 4 * 3600e3, note: "y" })), { status: 429 });
 });
 
@@ -116,4 +118,14 @@ test("report with area starting 'Synthetic' is written as source=demo; normal ar
   m = mocks(); relay = createRelay({ ...m, now: () => NOW });
   await relay.handle(await signed(dev, { action: "report", area: "Market road" }));
   assert.equal(m.calls[0][1].attributes.source.value ?? m.calls[0][1].attributes.source, "user");
+});
+
+test("backfill is sealed: the batch hands the new cut to SEAL_ADDRESS", async () => {
+  const dev = privateKeyToAccount(generatePrivateKey());
+  const m = mocks({ predict: true }); const relay = createRelay({ ...m, now: () => NOW });
+  await relay.handle(await signed(dev, { action: "backfill", started_at_ms: NOW - 3 * 3600e3, ended_at_ms: NOW - 3600e3, area: "Synthetic x" }));
+  const b = m.calls[0][1];
+  assert.deepEqual(b.ownershipChanges, [{ entityKey: "0xseal", newOwner: SEAL_ADDRESS }]);
+  assert.equal(b.creates[0].salt, 7n);
+  assert.equal(b.creates[0].attributes.source.value ?? b.creates[0].attributes.source, "demo");
 });

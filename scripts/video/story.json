@@ -1,47 +1,52 @@
 {
-"_meta": {
-"voice": "af_heart"
-},
-"lines": [
-{
-"id": "s1",
-"text": "Every Indian household knows the power cut. Almost nobody keeps a record, and the only log is usually the utility's."
-},
-{
-"id": "s2",
-"text": "BijliLog is a power-cut log for your PIN code, kept by neighbours, and stored on Arkiv instead of on our server."
-},
-{
-"id": "s3",
-"text": "Type a PIN code. This live cut is labelled demo data. It is a two-hour lease: each neighbour who taps Still dark renews it, and if nobody does, it expires on its own."
-},
-{
-"id": "s4",
-"text": "A neighbour taps Still dark. The confirmation and the lease renewal land in one atomic transaction, and every record links to the Arkiv explorer."
-},
-{
-"id": "s5",
-"text": "Power's back, and the cut becomes a read-only record, kept for a year and signed by the device that wrote it, with cuts, hours without power, the longest cut, and night-time cuts counted for this PIN."
-},
-{
-"id": "s6",
-"text": "Filter to cuts a neighbour confirmed, or longer than four hours, then download a CSV for your complaint. Every row carries its Arkiv entity key."
-},
-{
-"id": "s7",
-"text": "The page reads Arkiv straight from your browser. These are the exact queries it runs, so you can reproduce them."
-},
-{
-"id": "s8",
-"text": "It works in Hindi too, because this is built for people across India."
-},
-{
-"id": "s9",
-"text": "Why Arkiv? Expiry gives each cut a lease. Permissionless extension lets any neighbour renew it. Atomic batches keep writes together. WebSocket events update the page live."
-},
-{
-"id": "s10",
-"text": "A testnet demo with synthetic data, no personal data stored. Open source under MIT, built with AI assistance."
-}
-]
+ "_meta": {
+  "voice": "Harsha (AI clone, consented), Chatterbox"
+ },
+ "lines": [
+  {
+   "id": "s1",
+   "text": "Power cuts are an everyday thing in India, and the only record is usually the utility's own. BijliLog is a power cut log for your PIN code, kept by neighbours, and stored on Arkiv.",
+   "say": "Power cuts are an everyday thing in India, and the only record is usually the utility's own. Bijli Log is a power cut log for your PIN code, kept by neighbours, and stored on Ar-kiv."
+  },
+  {
+   "id": "s2",
+   "text": "One tap reports a cut. It is written to Arkiv as a two hour lease. This one is labelled demo, because the data here is synthetic.",
+   "say": "One tap reports a cut. It is written to Ar-kiv as a two hour lease. This one is labelled demo, because the data here is synthetic."
+  },
+  {
+   "id": "s3",
+   "text": "A neighbour on another phone taps Still dark. The confirmation and the lease renewal land in a single transaction, and this page updates live.",
+   "say": "A neighbour on another phone taps Still dark. The confirmation and the lease renewal land in a single transaction, and this page updates live."
+  },
+  {
+   "id": "s4",
+   "text": "When power is back, the cut becomes a permanent record. It is signed by the phone and sealed to an address nobody holds a key for, so nobody, including us, can edit or delete it.",
+   "say": "When power is back, the cut becomes a permanent record. It is signed by the phone, and sealed to an address nobody holds a key for, so nobody, including us, can edit or delete it."
+  },
+  {
+   "id": "s5",
+   "text": "Every row shows its proof: signed, sealed, and a link to the explorer. The calendar shows how often, and for how long.",
+   "say": "Every row shows its proof: signed, sealed, and a link to the explorer. The calendar shows how often, and for how long."
+  },
+  {
+   "id": "s6",
+   "text": "And the payoff is a ready-to-send complaint, in English or Hindi, with a WhatsApp button. It cites the 2020 consumer rights rules and the forum's forty-five days. If any record is demo, it says sample only, do not file.",
+   "say": "And the payoff is a ready to send complaint, in English or Hindi, with a WhatsApp button. It cites the twenty twenty consumer rights rules, and the forum's forty five days. If any record is demo, it says sample only, do not file."
+  },
+  {
+   "id": "s7",
+   "text": "The page reads Arkiv straight from your browser. These are the exact queries it runs, so anyone can check them without our app.",
+   "say": "The page reads Ar-kiv straight from your browser. These are the exact queries it runs, so anyone can check them without our app."
+  },
+  {
+   "id": "s8",
+   "text": "Here is what Arkiv gives us. Expiry is the lease. Permissionless extension lets any neighbour renew it. Atomic batches keep changes together. Sealed records make a finished cut evidence. New reports still go through our relay, and we say that openly.",
+   "say": "Here is what Ar-kiv gives us. Expiry is the lease. Permissionless extension lets any neighbour renew it. Atomic batches keep changes together. Sealed records make a finished cut evidence. New reports still go through our relay, and we say that openly."
+  },
+  {
+   "id": "s9",
+   "text": "That was BijliLog, by Harsha Shinde. Open source. A testnet demo with synthetic data, built with AI assistance. This narration is an AI copy of my own voice.",
+   "say": "That was Bijli Log, by Harsha Shinde. Open source. A testnet demo with synthetic data, built with AI assistance. This narration is an AI copy of my own voice."
+  }
+ ]
 }

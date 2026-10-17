@@ -1,0 +1,12 @@
+# verify.mjs 110001 at 17 Oct 2026 12:58 IST
+chain 7738577 | head block 686163 | $creator filter 0x440701BE95a49e2701BCedb39934a638dF0AE217
+
+Q1 live outages:
+  project = str('bijlilog-v1') AND type = str('outage') AND pin = str('110001') AND $creator = addr(0x440701BE95a49e2701BCedb39934a638dF0AE217)
+  -> 0 live outage(s)
+
+Q2 cut history:
+  project = str('bijlilog-v1') AND type = str('cut_log') AND pin = str('110001') AND started_at_ms >= u64(0) AND $creator = addr(0x440701BE95a49e2701BCedb39934a638dF0AE217)
+   0xe0495ce7e4434c825c2d3906bfca8a7b69a11d01d3c323ed79468c4cd6867176 110001 1 min confirmers=2 demo https://tiramisu.explorer.arkiv.network/entity/0xe0495ce7e4434c825c2d3906bfca8a7b69a11d01d3c323ed79468c4cd6867176
+   0x4b8a90a498ed78f6f55f2d84d5b4cde3a0d2b8418c09a14045c5629fc10d8862 110001 1 min confirmers=2 demo https://tiramisu.explorer.arkiv.network/entity/0x4b8a90a498ed78f6f55f2d84d5b4cde3a0d2b8418c09a14045c5629fc10d8862
+  -> 2 cut(s), 0 h without power, longest 1 min

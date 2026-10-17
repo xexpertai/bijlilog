@@ -4,7 +4,7 @@ import { isAddress, getAddress } from "viem";
 import { parseMessage, verifySigned, canonicalMessage } from "../src/lib/signing.js";
 import { isPincode, checkPublicText, checkBackfill } from "../src/lib/validate.js";
 import {
-  PROJECT, outageCreate, cutLogCreate, stillDarkBatch, powerBackBatch, leaseExpiry,
+  PROJECT, SEAL_ADDRESS, outageCreate, cutLogCreate, stillDarkBatch, powerBackBatch, leaseExpiry,
   q, decodeOutage, decodeConfirm, decodeCutLog, distinctConfirmers, identityOf, fetchAll,
 } from "../src/lib/schema.js";
 
@@ -126,10 +126,16 @@ export function createRelay({ publicClient, walletClient, now = () => Date.now()
           const startedAtMs = Number(a.started_at_ms), endedAtMs = Number(a.ended_at_ms);
           const chk = checkBackfill({ startedAtMs, endedAtMs, nowMs: now() });
           if (!chk.ok) throw new HttpError(400, chk.reason);
-          const r = await walletClient.createEntity(cutLogCreate({
-            pin: a.pin, startedAtMs, endedAtMs, confirmers: 0, origin: "backfill", area: area.value, note: note.value, source: reportSrc, ...common,
-          }));
-          return { action: "backfill", txHash: r.txHash, created: [r.entityKey] };
+          // Seal like power_back: hand the new record to SEAL_ADDRESS in the same batch, so a past cut is as immutable as a live one.
+          const sealKey = publicClient.predictEntityKeys ? (await publicClient.predictEntityKeys({ owner: relayAddress, count: 1 }))[0] : undefined;
+          const batch = {
+            creates: [cutLogCreate({
+              pin: a.pin, startedAtMs, endedAtMs, confirmers: 0, origin: "backfill", area: area.value, note: note.value, source: reportSrc, salt: sealKey?.salt, ...common,
+            })],
+            ...(sealKey && { ownershipChanges: [{ entityKey: sealKey.key, newOwner: SEAL_ADDRESS }] }),
+          };
+          const r = await walletClient.executeBatch(batch);
+          return { action: "backfill", txHash: r.txHash, created: r.createdEntities };
         }
         default:
           throw new HttpError(400, "unknown action");

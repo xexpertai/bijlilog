@@ -25,7 +25,7 @@ Payload (JSON): `{ v, area, note, signed:{msg,sig} }`.
 Attributes: `project`, `type=confirm`, `outage` (**key** of the outage), `pin`, `kind` (`still_out`|`restored`), `at_ms` (u64), `source`, `device` (addr).
 **Expiration: 30 days** (one billing-dispute window). **Flags: `readonly`**.
 
-### `cut_log` (a finished cut: the permanent record)
+### `cut_log` (a finished cut: the year-long record, 365 days; anyone can renew it)
 | Attribute | Type | Meaning |
 |---|---|---|
 | `project`, `type=cut_log`, `pin`, `source`, `device` | as above | |
@@ -43,8 +43,8 @@ Attributes: `project`, `type=confirm`, `outage` (**key** of the outage), `pin`, 
 | Report a cut | `createEntity` (`outage`) | starts the 2 h lease |
 | "Still dark" by a neighbour | `executeBatch({ creates:[confirm], extensions:[outage] })` | confirmation and lease renewal land together or not at all |
 | "Still dark" by the reporter, or a repeat | `extendEntity` | renews the lease but is not counted as a new witness |
-| "Power's back" | `executeBatch({ creates:[cut_log], deletes:[outage], ownershipChanges:[cut_log -> 0x…dEaD] })`, key from `predictEntityKeys` | the permanent record, the end of the lease and the sealing in one transaction |
-| Add a past cut | `createEntity` (`cut_log`, `origin=backfill`) | |
+| "Power's back" | `executeBatch({ creates:[cut_log], deletes:[outage], ownershipChanges:[cut_log -> 0x…dEaD] })`, key from `predictEntityKeys` | the year-long record (365 days, renewable by anyone), the end of the lease and the sealing in one transaction |
+| Add a past cut | `executeBatch` (`cut_log`, `origin=backfill`, sealed to 0x…dEaD in the same batch) | |
 
 ## Queries the app runs (rendered by the SDK's `render()`; also shown in the app)
 1. Live cuts for a PIN (exact) or postal district (prefix):

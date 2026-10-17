@@ -34,7 +34,7 @@ export const STR = {
     showAll60: (n) => `Show all ${n} days`,
     csv: "Download CSV for a complaint", addPast: "Add a past cut", from: "Power went", to: "Power came back", saveCut: "Save this cut",
     emptyTitle: "No cuts recorded in this period", emptySub: "Nothing matches these filters for this PIN yet. Try a longer period, or a nearby PIN (411001, 560001, 226001 have demo data).",
-    confirmedBy: (n) => (n === 1 ? "1 neighbour" : `${n} neighbours`), chain: "on chain ↗", sigOk: "signed ✓", sigBad: "signature ✗", demo: "DEMO", backfill: "added later",
+    confirmedBy: (n) => (n === 1 ? "1 neighbour" : `${n} neighbours`), chain: "on chain ↗", sigOk: "signed ✓", sigBad: "signature ✗", demo: "DEMO", backfill: "added later by a resident",
     // verify
     verifyTitle: "Verify on chain", howTitle: "How this works",
     how1: "Each report is an Arkiv entity on the Tiramisu testnet. This page reads them straight from Arkiv, not from our server.",
@@ -85,7 +85,7 @@ export const STR = {
     showAll60: (n) => `सभी ${n} दिन दिखाएँ`,
     csv: "शिकायत के लिए CSV डाउनलोड करें", addPast: "पिछली कटौती जोड़ें", from: "बिजली गई", to: "बिजली आई", saveCut: "यह कटौती सेव करें",
     emptyTitle: "इस अवधि में कोई कटौती दर्ज नहीं", emptySub: "इस पिन के लिए इन फ़िल्टरों से कुछ नहीं मिला। लंबी अवधि चुनें या पास का पिन देखें (411001, 560001, 226001 में डेमो डेटा है)।",
-    confirmedBy: (n) => `${n} पड़ोसी`, chain: "चेन पर ↗", sigOk: "हस्ताक्षरित ✓", sigBad: "हस्ताक्षर ✗", demo: "डेमो", backfill: "बाद में जोड़ी",
+    confirmedBy: (n) => `${n} पड़ोसी`, chain: "चेन पर ↗", sigOk: "हस्ताक्षरित ✓", sigBad: "हस्ताक्षर ✗", demo: "डेमो", backfill: "निवासी द्वारा बाद में जोड़ी",
     verifyTitle: "चेन पर जाँचें", howTitle: "यह कैसे काम करता है",
     how1: "हर रिपोर्ट Arkiv टेस्टनेट (Tiramisu) पर एक एंटिटी है। यह पेज उन्हें सीधे Arkiv से पढ़ता है, हमारे सर्वर से नहीं।",
     how2: "चालू कटौती 2 घंटे की लीज़ है। पड़ोसी का हर “अभी भी अंधेरा” उसे बढ़ाता है। कोई न बढ़ाए तो वह स्थिति कार्ड से अपने आप हट जाती है।",

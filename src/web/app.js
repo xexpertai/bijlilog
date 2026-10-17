@@ -207,9 +207,8 @@ async function renderHistory() {
         h("div", { class: "when" }, `${istTime(c.startedAtMs)}–${istTime(c.endedAtMs)}`),
         h("div", { class: "sub" },
           c.source === "demo" && h("span", { class: "badge demo" }, t("demo")),
-          c.origin === "backfill" && h("span", { class: "badge" }, t("backfill")),
           pin.length < 6 && h("span", { class: "badge" }, c.pin),
-          h("span", {}, t("confirmedBy", c.confirmers)), proof,
+          c.origin === "backfill" ? h("span", { class: "badge" }, t("backfill")) : h("span", {}, t("confirmedBy", c.confirmers)), proof,
           c.owner?.toLowerCase() === SEAL_ADDRESS.toLowerCase() && h("span", { class: "badge ok", title: t("sealedTip") }, t("sealed")),
           h("a", { href: explorer.entity(c.key), target: "_blank", rel: "noopener" }, t("chain")))),
       h("div", { class: `dur${c.durationMin >= 240 ? " long" : ""}` }, fmtDur(c.durationMin))));
@@ -348,9 +347,11 @@ async function init() {
   $("heat-more").addEventListener("click", () => { view.calAll = true; renderHeat(); });
   const dlg = $("complaint-dialog"); let cpLang = lang;
   const fillComplaint = () => {
-    const { text } = buildComplaint({ cuts: view.cuts, pin: view.pin, lang: cpLang, explorerEntity: explorer.entity });
+    const { text } = buildComplaint({ cuts: view.cuts, pin: view.pin, lang: cpLang, explorerEntity: explorer.entity, maxRows: 40 });
+    // WhatsApp links get long once percent-encoded (Hindi especially), so the shared text lists at most 8 rows and points to the CSV.
+    const wa = buildComplaint({ cuts: view.cuts, pin: view.pin, lang: cpLang, explorerEntity: explorer.entity, maxRows: 8 }).text;
     $("complaint-text").value = text;
-    $("cp-wa").href = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    $("cp-wa").href = `https://wa.me/?text=${encodeURIComponent(wa)}`;
     pressed($("cp-en"), cpLang === "en"); pressed($("cp-hi"), cpLang === "hi");
   };
   $("complaint").addEventListener("click", () => { if (!isPincode(view.pin)) return toast(t("enterPin")); cpLang = lang; fillComplaint(); dlg.showModal(); });

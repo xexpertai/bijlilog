@@ -12,9 +12,12 @@ vids, auds = [], []
 for ln in story["lines"]:
     i = ln["id"]; total = dur[i] + PAD
     ss = json.load(open(B / "clips" / f"{i}.json"))["ss"]
+    clen = json.load(open(B / "clips" / f"{i}.json")).get("len", total)
+    if clen + 0.05 < total: print(f"note {i}: recording {clen:.1f}s shorter than narration {total:.1f}s (last frame held)")
     v = seg / f"{i}.mp4"
-    run("ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-ss", f"{ss:.2f}", "-i", str(B / "clips" / f"{i}.webm"),
-        "-t", f"{total:.3f}", "-vf", f"scale=3840:2160:flags=lanczos,fps=30,tpad=stop_mode=clone:stop_duration=2,zoompan=z='1+0.04*on/{int(total*30)}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1920x1080:fps=30", "-t", f"{total:.3f}",
+    # picture is 1920x1020; the 60 px strip below it carries the disclosure badges (never covers app UI)
+    run("ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-ss", f"{ss:.2f}", "-i", str(B / "clips" / f"{i}.webm"), "-i", str(B / "strip.png"),
+        "-t", f"{total:.3f}", "-filter_complex", f"[0:v]scale=3840:2040:flags=lanczos,fps=30,tpad=stop_mode=clone:stop_duration=2,zoompan=z='1+0.03*on/{int(total*30)}':x='iw/2-(iw/zoom/2)':y='0':d=1:s=1920x1020:fps=30[a];[a][1:v]vstack=inputs=2,format=yuv420p[v]", "-map", "[v]", "-t", f"{total:.3f}",
         "-an", "-c:v", "libx264", "-preset", "medium", "-crf", "17", "-pix_fmt", "yuv420p", str(v))
     a = seg / f"{i}.wav"
     run("ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", str(B / "audio" / f"{i}.wav"), "-af",

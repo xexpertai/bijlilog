@@ -98,9 +98,24 @@ test("complaint summary: real cuts cite the Rules and 45 days; any DEMO record g
   const ex = (k) => `https://x/${k}`;
   const real = buildComplaint({ cuts: [mk("user", 0)], pin: "411001", lang: "en", explorerEntity: ex });
   assert.equal(real.hasDemo, false);
+  assert.match(real.text, /State Commissions may allow fewer hours/); assert.match(real.text, /check the current rules for your state/);
+  assert.match(real.text, /sealed/);
   assert.match(real.text, /Rights of Consumers\) Rules, 2020/); assert.match(real.text, /45 days/); assert.doesNotMatch(real.text, /SAMPLE ONLY/);
   const demo = buildComplaint({ cuts: [mk("user", 0), mk("demo", 1)], pin: "411001", lang: "en", explorerEntity: ex });
   assert.ok(demo.text.startsWith("SAMPLE ONLY: contains DEMO (synthetic) records. Do not file.")); assert.match(demo.text, /\[DEMO\]/);
   const hi = buildComplaint({ cuts: [mk("demo", 0)], pin: "411001", lang: "hi", explorerEntity: ex });
   assert.ok(hi.text.startsWith("केवल नमूना:")); assert.match(hi.text, /45 दिनों/); assert.match(hi.text, /1 पड़ोसी|2 पड़ोसियों/);
+  const hb = buildComplaint({ cuts: [{ ...mk("demo", 0), origin: "backfill" }], pin: "411001", lang: "hi", explorerEntity: ex }).text; assert.match(hb, /निवासी द्वारा बाद में जोड़ी गई/); assert.doesNotMatch(hb, /0 पड़ोसियों/);
+});
+
+test("complaint: 'cannot be edited' only for sealed rows; backfill tagged; WhatsApp cap", () => {
+  const SEAL = "0x000000000000000000000000000000000000dEaD";
+  const mk = (i, owner, origin = "live") => ({ key: "0x" + String(i).padStart(64, "0"), pin: "411001", startedAtMs: Date.UTC(2026, 9, 1 + i, 4), endedAtMs: Date.UTC(2026, 9, 1 + i, 6), durationMin: 120, confirmers: 0, source: "user", owner, origin });
+  const ex = (k) => k;
+  const all = buildComplaint({ cuts: [mk(1, SEAL), mk(2, SEAL, "backfill")], pin: "411001", explorerEntity: ex }).text;
+  assert.match(all, /Every cut below is sealed/); assert.match(all, /added later by a resident/); assert.doesNotMatch(all, /2\. .*confirmed by/); assert.doesNotMatch(all, /\[sealed\]/);
+  const mixed = buildComplaint({ cuts: [mk(1, SEAL), mk(2, "0xabc")], pin: "411001", explorerEntity: ex }).text;
+  assert.match(mixed, /Cuts marked \[sealed\] cannot be edited/); assert.equal((mixed.match(/\[sealed\]/g) ?? []).length, 2); // 1 in legend + 1 row
+  const many = buildComplaint({ cuts: Array.from({ length: 12 }, (_, i) => mk(i, SEAL)), pin: "411001", explorerEntity: ex, maxRows: 8 }).text;
+  assert.match(many, /and 4 more cuts \(full list: CSV\)/);
 });
