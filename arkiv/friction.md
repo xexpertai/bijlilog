@@ -33,12 +33,13 @@ Versions: `@arkiv-network/sdk` 0.8.1, `viem` 2.57.4, Node 22, Tiramisu testnet (
 - **Expected:** `kind != str('restored')`.
 - **Actual:** the docs say `!=` is reserved but not implemented; the workaround is `NOT (attr = value)`, which also matches entities that never set the attribute. BijliLog does not need it (it selects with `=`), so this was read from the docs and not exercised in the app.
 
-### 6. "readonly" blocks edits but not deletion, which the flag name does not suggest
-- **Surface:** creation flag `readonly` (SDK 0.8.1), `patchEntity`, `deleteEntity`.
+### 6. "readonly" blocks edits but not deletion; sealing needs an ownership transfer
+- **Surface:** creation flag `readonly` (SDK 0.8.1), `patchEntity`, `deleteEntity`, `changeOwnership` / batch `ownershipChanges`, `predictEntityKeys`.
 - **Expected:** a record created `readonly` is immutable, so I planned to tell users "nobody, including us, can change or remove a published cut".
-- **Actual:** edits are rejected, with a very clear message: `EntityMutationError: Transaction failed: entity 0x4b8a90a4…0d8862 was created readonly, so its contents can never change. Its expiry can still be extended, and it can be transferred or deleted`. So the owner can still delete it. That is documented in the error, but I only learned it by testing, and BijliLog's copy now says "only the relay wallet could delete it, and that would be visible on chain".
-- **Steps:** `node --env-file=.env.local scripts/probe-readonly.mjs <cut_log entity key>`.
-- **Fix idea:** state the delete/transfer exceptions next to the flag in the docs, and consider a stronger flag (or burning ownership) for records that must be tamper-evident including against the owner.
+- **Actual:** edits are rejected with a very clear message: `EntityMutationError: Transaction failed: entity 0x21510277…2b2dd2 was created readonly, so its contents can never change. Its expiry can still be extended, and it can be transferred or deleted` (`evidence/readonly-output.txt`). So the owner can still delete it. To make the claim true, BijliLog now creates the cut_log and transfers it to `0x…dEaD` in one batch (`ownershipChanges`, with the new key from `predictEntityKeys` so the transfer can name an entity created in the same transaction). Verified (`evidence/e2e-output.txt`): `cut_log owner: 0x…dEaD | creator: <relay>`; patch and delete by the relay fail with `entity … is owned by 0x…dEaD, not 0x4407…`; a non-owner can still `extendEntity` it.
+- **Steps:** `node --env-file=.env.local scripts/e2e.mjs http://127.0.0.1:18432` (server running with a funded relay key).
+- **Friction in detail:** the docs/flag name suggest immutability, but deletion and transfer stay allowed; you only learn it from the error. Also, `predictEntityKeys` is only valid while nothing else from that owner is in flight; BijliLog serialises all relay writes in one queue to keep it true. A small mistake of ours: SDK 0.8.1 has `patchEntity`, not `updateEntity`, and our first readonly test called the wrong name.
+- **Fix idea:** state the delete/transfer exceptions next to the flag in the docs, and offer a `sealed`/`immutable` creation flag (no delete, no transfer) so tamper-evident records do not depend on a burn address.
 
 ### 7. The anonymous read budget is small, and the rejection is not a JSON-RPC error
 - **Surface:** public Tiramisu HTTP RPC without an access key; `arkiv_query`.

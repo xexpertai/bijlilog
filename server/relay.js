@@ -74,7 +74,9 @@ export function createRelay({ publicClient, walletClient, now = () => Date.now()
     if (usedSigs.size > 100_000) usedSigs.clear();
 
     const signed = { msg, sig };
-    const common = { device, signed, source: "user" };
+    const common = { device, signed };
+    // Acting on a DEMO outage produces DEMO records, never records that look like real user reports.
+    const srcOf = (outage) => (outage?.source === "demo" ? "demo" : "user");
 
     return enqueue(async () => {
       switch (a.action) {
@@ -85,7 +87,7 @@ export function createRelay({ publicClient, walletClient, now = () => Date.now()
           // One live report per PIN: point the person at the existing one instead of duplicating it.
           const live = await publicClient.select({ key: true }).where(q.liveOutages(a.pin)).createdBy(relayAddress).limit(1).fetch();
           if (live.entities.length) throw new HttpError(409, "a power cut is already live for this PIN; confirm it instead", { outageKey: live.entities[0].key });
-          const r = await walletClient.createEntity(outageCreate({ pin: a.pin, startedAtMs, area: area.value, note: note.value, ...common }));
+          const r = await walletClient.createEntity(outageCreate({ pin: a.pin, startedAtMs, area: area.value, note: note.value, source: "user", ...common }));
           return { action: "report", txHash: r.txHash, created: [r.entityKey] };
         }
         case "still_dark": {
@@ -100,7 +102,7 @@ export function createRelay({ publicClient, walletClient, now = () => Date.now()
             const r = await walletClient.extendEntity({ entityKey: outage.key, expires: leaseExpiry() });
             return { action: "still_dark", txHash: r.txHash, extended: [outage.key], counted: false };
           }
-          const r = await walletClient.executeBatch(stillDarkBatch({ outageKey: outage.key, pin: outage.pin, atMs: ts, ...common }));
+          const r = await walletClient.executeBatch(stillDarkBatch({ outageKey: outage.key, pin: outage.pin, atMs: ts, source: srcOf(outage), ...common }));
           return { action: "still_dark", txHash: r.txHash, created: r.createdEntities, extended: [outage.key], counted: true };
         }
         case "power_back": {
@@ -112,8 +114,10 @@ export function createRelay({ publicClient, walletClient, now = () => Date.now()
           if (!(endedAtMs > outage.startedAtMs)) throw new HttpError(400, "end must be after start");
           const confirms = (await fetchAll(publicClient.select({ key: true, creator: true, attributes: true, payload: true }).where(q.confirmsFor(outage.key)))).map(decodeConfirm);
           const confirmers = distinctConfirmers(confirms, identityOf(outage, [relayAddress]), [relayAddress]);
+          // Predict the key the new cut_log will get so the same batch can hand it to the seal address.
+          const sealKey = publicClient.predictEntityKeys ? (await publicClient.predictEntityKeys({ owner: relayAddress, count: 1 }))[0] : undefined;
           const callerIsOwner = outage.owner?.toLowerCase() === relayAddress.toLowerCase();
-          const r = await walletClient.executeBatch(powerBackBatch({ outage, endedAtMs, confirmers, callerIsOwner, ...common }));
+          const r = await walletClient.executeBatch(powerBackBatch({ outage, endedAtMs, confirmers, callerIsOwner, source: srcOf(outage), sealKey, ...common }));
           return { action: "power_back", txHash: r.txHash, created: r.createdEntities, deleted: r.deletedEntities ?? [], confirmers };
         }
         case "backfill": {
@@ -121,7 +125,7 @@ export function createRelay({ publicClient, walletClient, now = () => Date.now()
           const chk = checkBackfill({ startedAtMs, endedAtMs, nowMs: now() });
           if (!chk.ok) throw new HttpError(400, chk.reason);
           const r = await walletClient.createEntity(cutLogCreate({
-            pin: a.pin, startedAtMs, endedAtMs, confirmers: 0, origin: "backfill", area: area.value, note: note.value, ...common,
+            pin: a.pin, startedAtMs, endedAtMs, confirmers: 0, origin: "backfill", area: area.value, note: note.value, source: "user", ...common,
           }));
           return { action: "backfill", txHash: r.txHash, created: [r.entityKey] };
         }

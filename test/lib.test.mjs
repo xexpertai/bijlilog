@@ -79,3 +79,15 @@ test("stats: counts, long cuts, night cuts, per-day strip, CSV", () => {
   const csv = toCSV([{ ...cuts[0], pin: "411001", origin: "live", source: "demo", creator: "0xabc", key: K1 }], (k) => `x/${k}`);
   assert.match(csv.split("\n")[1], /^411001,2026-10-10 05:30,2026-10-10 06:00,30,0,live,demo,0xabc,0x1111/);
 });
+
+test("demo outages produce demo records; early test-run cuts read as DEMO", async () => {
+  const { powerBackBatch, decodeCutLog, TEST_RUN_KEYS } = await import("../src/lib/schema.js");
+  const outage = { key: "0x" + "ab".repeat(32), pin: "411001", startedAtMs: 1, area: "", note: "", source: "demo" };
+  const b = powerBackBatch({ outage, endedAtMs: 120_000, confirmers: 2, callerIsOwner: true, source: "user" });
+  assert.equal(b.creates[0].attributes.source.value, "demo");
+  const user = powerBackBatch({ outage: { ...outage, source: "user" }, endedAtMs: 120_000, confirmers: 2, callerIsOwner: true, source: "user" });
+  assert.equal(user.creates[0].attributes.source.value, "user");
+  const key = [...TEST_RUN_KEYS][0];
+  const e = { key, creator: "0x1", attributes: { source: { type: "str", value: "user" }, pin: { type: "str", value: "411001" } }, toJson: () => ({}) };
+  assert.equal(decodeCutLog(e).source, "demo");
+});

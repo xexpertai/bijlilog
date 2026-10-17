@@ -3,75 +3,108 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>BijliLog</title>
-  <meta name="description" content="A public, community-kept power-cut log for your PIN code, stored on Arkiv (Tiramisu testnet).">
+  <meta name="theme-color" content="#fbf6ec">
+  <title>BijliLog · बिजलीलॉग</title>
+  <meta name="description" content="A public, community-kept power-cut log for your PIN code, stored on Arkiv (Tiramisu testnet). आपके पिन कोड का बिजली-कटौती रिकॉर्ड।">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <a class="skip" href="#status" data-i18n="skip">Skip to status</a>
   <header class="top">
     <div class="brand">
       <svg viewBox="0 0 24 24" aria-hidden="true" class="bolt"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
       <div>
-        <h1>BijliLog</h1>
+        <h1>BijliLog <span class="hi-name" lang="hi">बिजलीलॉग</span></h1>
         <p class="tag" data-i18n="tagline">Power-cut log for your PIN code, kept by neighbours</p>
       </div>
     </div>
-    <div class="top-right">
-      <button id="lang" class="chip" type="button" aria-label="Switch language">हिंदी</button>
-      <span class="chip net" title="Arkiv Tiramisu testnet, chain 7738577">Arkiv testnet</span>
+    <div class="lang" role="group" aria-label="Language / भाषा">
+      <button id="lang-en" type="button" data-lang="en" aria-pressed="true">EN</button>
+      <button id="lang-hi" type="button" data-lang="hi" aria-pressed="false" lang="hi">हिंदी</button>
     </div>
   </header>
 
   <main>
-    <section class="card pin-card">
-      <form id="pin-form" class="pin-row" autocomplete="off">
-        <label for="pin" data-i18n="pinLabel">PIN code</label>
-        <input id="pin" inputmode="numeric" pattern="[1-9][0-9]{0,5}" maxlength="6" placeholder="411001" required>
-        <button class="btn" type="submit" data-i18n="show">Show</button>
+    <div class="col-a">
+    <section class="pin-card" aria-labelledby="pin-label">
+      <form id="pin-form" autocomplete="off" novalidate>
+        <label id="pin-label" for="pin" data-i18n="pinLabel">Your PIN code</label>
+        <div class="pin-row">
+          <input id="pin" inputmode="numeric" pattern="[1-9][0-9]{0,5}" maxlength="6" placeholder="411001" aria-describedby="pin-hint" required>
+          <button class="btn primary" type="submit" data-i18n="show">Check</button>
+        </div>
       </form>
-      <p class="hint" data-i18n="pinHint">6 digits for your area. 3 digits (e.g. 411) shows the whole postal district, read-only.</p>
-      <div id="live-dot" class="live-dot" hidden><span></span><b data-i18n="liveOn">Live</b> <i id="live-text"></i></div>
+      <p id="pin-hint" class="hint" data-i18n="pinHint">6 digits for your area. 3 digits (e.g. 411) show a whole postal district, read-only.</p>
+      <div id="recent" class="chips" aria-label="Recent PIN codes"></div>
     </section>
 
-    <section class="card" id="now-card">
-      <h2 data-i18n="nowTitle">Right now</h2>
-      <div id="now"></div>
-    </section>
+    <section id="status" class="status-wrap" aria-live="polite" aria-busy="true" tabindex="-1"></section>
 
-    <section class="card" id="report-card" hidden>
-      <h2 data-i18n="reportTitle">Is the power out where you are?</h2>
+    <section id="report-card" class="card" hidden aria-labelledby="report-title">
+      <h2 id="report-title" data-i18n="reportTitle">Report a power cut</h2>
       <form id="report-form" class="stack">
         <div class="grid2">
-          <label><span data-i18n="wentAt">Went at (optional)</span><input id="went-at" type="time"></label>
           <label><span data-i18n="areaLabel">Area / landmark (public)</span><input id="area" maxlength="60" placeholder="Market road, near bus depot"></label>
+          <label><span data-i18n="wentAt">Went at (optional)</span><input id="went-at" type="time"></label>
         </div>
         <label><span data-i18n="noteLabel">Note (public, optional)</span><input id="note" maxlength="60" placeholder="Whole lane dark, transformer sparked"></label>
         <p class="hint warn" data-i18n="publicWarn">Everything here is public. Never type names, phone numbers, house numbers or meter numbers.</p>
-        <button class="btn big danger" type="submit" data-i18n="reportBtn">Power cut here now</button>
+        <div class="btn-row">
+          <button class="btn danger" type="submit" data-i18n="reportSend">Report power cut</button>
+          <button class="btn ghost" id="report-cancel" type="button" data-i18n="cancel">Cancel</button>
+        </div>
       </form>
     </section>
 
-    <section class="card" id="history-card">
+    <details class="card verify" id="verify">
+      <summary data-i18n="verifyTitle">Verify on chain</summary>
+      <div class="verify-body">
+        <h3 data-i18n="howTitle">How this works</h3>
+        <ul>
+          <li data-i18n="how1">Each report is an Arkiv entity on the Tiramisu testnet. This page reads them straight from Arkiv, not from our server.</li>
+          <li data-i18n="how2">A live cut is a 2-hour lease. Every “Still dark” from a neighbour renews it. If nobody renews it, it disappears from “Right now” by itself.</li>
+          <li data-i18n="how3">“Power's back” turns it into a read-only record kept for a year.</li>
+          <li data-i18n="how4">Your phone holds a device key that signs every action. Our relay pays the testnet fee and writes it. The signature is stored with the record, so anyone can check who said what.</li>
+        </ul>
+        <h3 data-i18n="verify">Check it without this app</h3>
+        <p class="hint">Relay wallet (on-chain <code>$creator</code> of every record): <code id="relay-addr">…</code></p>
+        <pre id="queries" tabindex="0"></pre>
+        <p class="hint"><span data-i18n="device">Your device key</span>: <code id="device-addr">…</code> <span data-i18n="deviceNote">(signs only; holds no funds; stays in this browser)</span></p>
+        <p class="hint"><a href="https://github.com/xexpertai/bijlilog" target="_blank" rel="noopener" data-i18n="source">Source code</a> · <a href="https://tiramisu.explorer.arkiv.network" target="_blank" rel="noopener">Arkiv explorer ↗</a></p>
+      </div>
+    </details>
+    <p class="demo-note" data-i18n="demoNote">Records marked DEMO are synthetic test data, written to show how the log works. They are not real outages.</p>
+    </div>
+    <div class="col-b">
+    <div id="scope" class="scope"></div>
+    <section id="tiles" class="tiles" aria-label="Summary"></section>
+
+    <section class="card" id="calendar-card" aria-labelledby="cal-title">
       <div class="row-between">
-        <h2 data-i18n="historyTitle">Cut history</h2>
-        <select id="range" aria-label="Period">
-          <option value="7">7 days</option>
-          <option value="30" selected>30 days</option>
-          <option value="60">60 days</option>
-        </select>
+        <h2 id="cal-title" data-i18n="calTitle">Power cuts by day</h2>
+        <div class="seg" role="group" aria-label="Period" id="range">
+          <button type="button" data-days="7">7</button>
+          <button type="button" data-days="30">30</button>
+          <button type="button" data-days="60" aria-pressed="true">60</button>
+          <span class="seg-unit" data-i18n="days">days</span>
+        </div>
       </div>
-      <div class="filters">
-        <label class="check"><input type="checkbox" id="f-confirmed"> <span data-i18n="fConfirmed">Only cuts confirmed by a neighbour</span></label>
-        <label class="check"><input type="checkbox" id="f-long"> <span data-i18n="fLong">Only cuts of 4 hours or more</span></label>
-        <label class="check"><input type="checkbox" id="f-demo" checked> <span data-i18n="fDemo">Include demo data</span></label>
+      <div id="heat" class="heat" role="img"></div>
+      <div class="legend" aria-hidden="true"><span><i class="l0"></i><span data-i18n="lg0">No cut reported</span></span><span><i class="l1"></i>&lt; 1 <span data-i18n="h">h</span></span><span><i class="l2"></i>1–3 <span data-i18n="h">h</span></span><span><i class="l3"></i>3–6 <span data-i18n="h">h</span></span><span><i class="l4"></i>6+ <span data-i18n="h">h</span></span></div>
+    </section>
+
+    <section class="card" id="history-card" aria-labelledby="hist-title">
+      <h2 id="hist-title" data-i18n="historyTitle">Cut history</h2>
+      <div class="chips filters" role="group" aria-label="Filters">
+        <button type="button" class="chip" id="f-confirmed" aria-pressed="false" data-i18n="fConfirmed">Confirmed by neighbours</button>
+        <button type="button" class="chip" id="f-long" aria-pressed="false" data-i18n="fLong">4 hours or more</button>
+        <button type="button" class="chip" id="f-demo" aria-pressed="true" data-i18n="fDemo">Show demo data</button>
       </div>
-      <div id="tiles" class="tiles"></div>
-      <div id="strip" class="strip" aria-label="Minutes without power per day"></div>
-      <div id="history"></div>
-      <div class="row-between actions">
+      <div id="history" class="timeline"></div>
+      <div class="btn-row actions">
         <button id="csv" class="btn ghost" type="button" data-i18n="csv">Download CSV for a complaint</button>
-        <button id="show-backfill" class="btn ghost" type="button" data-i18n="addPast">Add a past cut</button>
+        <button id="show-backfill" class="btn ghost" type="button" aria-expanded="false" data-i18n="addPast">Add a past cut</button>
       </div>
       <form id="backfill-form" class="stack" hidden>
         <div class="grid2">
@@ -79,30 +112,18 @@
           <label><span data-i18n="to">Power came back</span><input id="bf-end" type="datetime-local" required></label>
         </div>
         <label><span data-i18n="noteLabel">Note (public, optional)</span><input id="bf-note" maxlength="60"></label>
-        <button class="btn" type="submit" data-i18n="saveCut">Save this cut</button>
+        <button class="btn primary" type="submit" data-i18n="saveCut">Save this cut</button>
       </form>
     </section>
 
-    <section class="card about">
-      <h2 data-i18n="howTitle">How this works, and how to check it yourself</h2>
-      <ul>
-        <li data-i18n="how1">Each report is an Arkiv entity on the Tiramisu testnet. This page reads them straight from Arkiv, not from our server.</li>
-        <li data-i18n="how2">A live cut is a 2-hour lease. Every “Still dark” from a neighbour renews it. If nobody renews it, it disappears from “Right now” by itself.</li>
-        <li data-i18n="how3">“Power's back” turns it into a read-only record kept for a year. Nobody, including us, can edit it. Only the relay wallet could delete it, and that would be visible on chain.</li>
-        <li data-i18n="how4">Your phone holds a device key that signs every action. Our relay pays the testnet fee and writes it. The signature is stored with the record, so anyone can check who said what.</li>
-      </ul>
-      <details>
-        <summary data-i18n="verify">Verify without this app</summary>
-        <p class="hint">Relay wallet (on-chain <code>$creator</code> of every record): <code id="relay-addr">…</code></p>
-        <pre id="queries"></pre>
-      </details>
-      <p class="hint" data-i18n="demoNote">Records marked DEMO are synthetic test data, written to show how the log works. They are not real outages.</p>
-      <p class="hint"><span data-i18n="device">Your device key</span>: <code id="device-addr">…</code> <span data-i18n="deviceNote">(signs only; holds no funds; stays in this browser)</span></p>
-    </section>
+
+
+
+    </div>
   </main>
 
   <div id="toast" role="status" aria-live="polite"></div>
-  <footer class="foot">MIT · <a href="https://github.com/xexpertai/bijlilog">source</a> · <span data-i18n="testnetNote">Testnet demo: no real money, no personal data.</span></footer>
+  <footer class="foot">MIT · <span data-i18n="testnetNote">Testnet demo: no real money, no personal data.</span> <span id="live-dot" class="live" hidden><span class="dot"></span><span data-i18n="liveOn">Live updates on</span> <i id="live-text"></i></span></footer>
   <script type="module" src="app.js"></script>
 </body>
 </html>

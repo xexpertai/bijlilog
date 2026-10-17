@@ -35,7 +35,7 @@ Attributes: `project`, `type=confirm`, `outage` (**key** of the outage), `pin`, 
 | `origin` | str | `live` (closed from a live outage) or `backfill` (past cut added by hand) |
 | `outage` | key | the outage it closed (live origin only) |
 
-**Expiration: 365 days.** **Flags: `readonly` + `permissionlessExtension`**: nobody, including the operator, can edit a published cut (tested: a patch is rejected with "was created readonly, so its contents can never change"; the owner can still delete it, which would be visible on chain), and anyone can pay to keep the record alive longer.
+**Expiration: 365 days.** **Flags: `readonly` + `permissionlessExtension`**, and, for cuts closed through the app, **ownership transferred to `0x000000000000000000000000000000000000dEaD` in the same transaction** as the create. Result (tested on Tiramisu, `evidence/e2e-output.txt`): a patch or delete by the relay is rejected ("owned by 0x…dEaD"), a patch by anyone is rejected by `readonly` (`evidence/readonly-output.txt`), and anyone can still extend the record. `$creator` stays the relay wallet, so readers can still tell who wrote it. The 16 seed demo cuts are `readonly` but still owned by the relay.
 
 ## Writes (all via the Arkiv SDK 0.8.1)
 | Action | Arkiv call | Why this shape |
@@ -43,7 +43,7 @@ Attributes: `project`, `type=confirm`, `outage` (**key** of the outage), `pin`, 
 | Report a cut | `createEntity` (`outage`) | starts the 2 h lease |
 | "Still dark" by a neighbour | `executeBatch({ creates:[confirm], extensions:[outage] })` | confirmation and lease renewal land together or not at all |
 | "Still dark" by the reporter, or a repeat | `extendEntity` | renews the lease but is not counted as a new witness |
-| "Power's back" | `executeBatch({ creates:[cut_log], deletes:[outage] })` | the permanent record and the end of the lease in one transaction |
+| "Power's back" | `executeBatch({ creates:[cut_log], deletes:[outage], ownershipChanges:[cut_log -> 0x…dEaD] })`, key from `predictEntityKeys` | the permanent record, the end of the lease and the sealing in one transaction |
 | Add a past cut | `createEntity` (`cut_log`, `origin=backfill`) | |
 
 ## Queries the app runs (rendered by the SDK's `render()`; also shown in the app)

@@ -1,35 +1,38 @@
-report 0xa7d6c5cd4135bfff6e28658be2aa688fd44e7d612d8759b7cd0e2dee9caf3c8d [
-  '0x95db8a6ff3f4276d451a078395e8c8dd72f44e31c88710804b007fb0ae62cf08'
+report 0xc89af28b14dded5a18404dc4f11d333bda9b7f52451b71bab2932a325ad271f9 [
+  '0x0d7a66f629077db3150194518fbd205557fa2eb9d81b30867a820d9ee53610a3'
 ]
-still_dark B (neighbour: batch confirm+extend) 0xb45231c630befdee9dda269b40107aae82284e09ca6873cde6b09320c5cbfd7c counted true
-still_dark A (reporter: extend only) 0xf7e8b228cd3298fab146c7a20de631a42f1babd9258f9d35bdfcff21019c6b33 counted false
-still_dark C (neighbour) 0xcf803b2445124704efda27621d241c41af94efac35fc40000d6b472c5c740bb6 counted true
-lease expiry block: 683330 -> 683336 -> 683342
-permissionless extend by non-owner 0xb3cfcd67D6Cbb269C7a3374B2D1702a604B17310 0x928e0e2108875d93485ec6ab9d33a47a56b97a510287adfb7dbc52e72acce044 owner is 0x440701BE95a49e2701BCedb39934a638dF0AE217 expiry -> 683350
-power_back (batch: cut_log + delete outage) 0x341018bf9cd5b865b4044cee93440ae0eca4e7ba8c183a128ecdd593f695ca94 confirmers 2 created [
-  '0x4b8a90a498ed78f6f55f2d84d5b4cde3a0d2b8418c09a14045c5629fc10d8862'
+still_dark B (neighbour: batch confirm+extend) 0x02c03e36d5d9e79ee73c4d5f6dc6a0b613ccf7fbf8f43d9be13e543d221ae49d counted true
+still_dark A (reporter: extend only) 0x2fcd59b9c951813feb950e1b4304f17a0631ab121a7e3dfd45ba1665d52f73f4 counted false
+still_dark C (neighbour) 0x72356a19aeb70565298069e835978d456fbcbacb05933e3bbf860641cf5aedd1 counted true
+lease expiry block: 685717 -> 685724 -> 685731
+permissionless extend by non-owner 0x875c17edCCa4706e0c8E23858B9f8b09Adc3A0E9 0x655d1eb99d66594eb7ae35acde8936a9ceb42c95c6b556fcf52b2ccf0163f700 owner is 0x440701BE95a49e2701BCedb39934a638dF0AE217 expiry -> 685739
+power_back (batch: cut_log + delete outage) 0x9bbd704c7d5f8ec932685975bfe31f7c7c4bd19d8a58fe21bfd819c3653d4e86 confirmers 2 created [
+  '0xe0495ce7e4434c825c2d3906bfca8a7b69a11d01d3c323ed79468c4cd6867176'
 ] deleted [
-  '0x95db8a6ff3f4276d451a078395e8c8dd72f44e31c88710804b007fb0ae62cf08'
+  '0x0d7a66f629077db3150194518fbd205557fa2eb9d81b30867a820d9ee53610a3'
 ]
 outage deleted: true | confirms: 2 | cut_log: [
-  '0x4b8a90a498ed78f6f55f2d84d5b4cde3a0d2b8418c09a14045c5629fc10d8862 1min confirmers=2'
+  '0xe0495ce7e4434c825c2d3906bfca8a7b69a11d01d3c323ed79468c4cd6867176 1min confirmers=2'
 ]
-update of readonly cut_log: relayWc.updateEntity is not a function
+cut_log owner: 0x000000000000000000000000000000000000dEaD | creator: 0x440701BE95a49e2701BCedb39934a638dF0AE217 (owner is the seal address: true )
+patchEntity by relay (creator, no longer owner) -> rejected: Transaction failed: entity 0xe0495ce7…867176 is owned by 0x000000000000000000000000000000000000dEaD, not 0x440701BE95a49e2701BCedb39934a638dF0AE217
+deleteEntity by relay -> rejected: Transaction failed: entity 0xe0495ce7…867176 is owned by 0x000000000000000000000000000000000000dEaD, not 0x440701BE95a49e2701BCedb39934a638dF0AE217
+permissionless extend of the sealed cut by a non-owner: 0xeb4473ab3cf36d4435b36ca46249af901fea48f01e4651d2b31f3b7fec36f39c
 {
- "outage": "0x95db8a6ff3f4276d451a078395e8c8dd72f44e31c88710804b007fb0ae62cf08",
- "cut": "0x4b8a90a498ed78f6f55f2d84d5b4cde3a0d2b8418c09a14045c5629fc10d8862",
+ "outage": "0x0d7a66f629077db3150194518fbd205557fa2eb9d81b30867a820d9ee53610a3",
+ "cut": "0xe0495ce7e4434c825c2d3906bfca8a7b69a11d01d3c323ed79468c4cd6867176",
  "explorer": {
-  "outage": "https://tiramisu.explorer.arkiv.network/entity/0x95db8a6ff3f4276d451a078395e8c8dd72f44e31c88710804b007fb0ae62cf08",
-  "cut": "https://tiramisu.explorer.arkiv.network/entity/0x4b8a90a498ed78f6f55f2d84d5b4cde3a0d2b8418c09a14045c5629fc10d8862",
-  "power_back_tx": "https://tiramisu.explorer.arkiv.network/tx/0x341018bf9cd5b865b4044cee93440ae0eca4e7ba8c183a128ecdd593f695ca94",
-  "report_tx": "https://tiramisu.explorer.arkiv.network/tx/0xa7d6c5cd4135bfff6e28658be2aa688fd44e7d612d8759b7cd0e2dee9caf3c8d"
+  "outage": "https://tiramisu.explorer.arkiv.network/entity/0x0d7a66f629077db3150194518fbd205557fa2eb9d81b30867a820d9ee53610a3",
+  "cut": "https://tiramisu.explorer.arkiv.network/entity/0xe0495ce7e4434c825c2d3906bfca8a7b69a11d01d3c323ed79468c4cd6867176",
+  "power_back_tx": "https://tiramisu.explorer.arkiv.network/tx/0x9bbd704c7d5f8ec932685975bfe31f7c7c4bd19d8a58fe21bfd819c3653d4e86",
+  "report_tx": "https://tiramisu.explorer.arkiv.network/tx/0xc89af28b14dded5a18404dc4f11d333bda9b7f52451b71bab2932a325ad271f9"
  },
  "expiry": [
-  683330,
-  683336,
-  683342,
-  683350
+  685717,
+  685724,
+  685731,
+  685739
  ],
- "ext": "0x928e0e2108875d93485ec6ab9d33a47a56b97a510287adfb7dbc52e72acce044",
- "pb": "0x341018bf9cd5b865b4044cee93440ae0eca4e7ba8c183a128ecdd593f695ca94"
+ "ext": "0x655d1eb99d66594eb7ae35acde8936a9ceb42c95c6b556fcf52b2ccf0163f700",
+ "pb": "0x9bbd704c7d5f8ec932685975bfe31f7c7c4bd19d8a58fe21bfd819c3653d4e86"
 }

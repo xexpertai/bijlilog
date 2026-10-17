@@ -23,6 +23,15 @@ export const cutLogExpiry = () => ExpirationTime.fromDays(LIFETIME.cutLogDays);
 
 export const SOURCES = ["user", "demo"];
 
+// Three cut records written by our own test runs on 17 Oct (before the relay learned to pass "demo" through)
+// are stored on chain as source=user. They are synthetic, so every reader shows them as DEMO.
+export const TEST_RUN_KEYS = new Set([
+  "0x8599122365d455f6906a7f48e8e40eff23126950eb508be9e5b2d609bf07fc66",
+  "0xb2a1d09b609c37b575114704e25b828f2195f7666f6f02a8a29e97fe4780b055",
+  "0x4b8a90a498ed78f6f55f2d84d5b4cde3a0d2b8418c09a14045c5629fc10d8862",
+  "0xe0495ce7e4434c825c2d3906bfca8a7b69a11d01d3c323ed79468c4cd6867176", // e2e run 2 (sealed)
+]);
+
 // ---------- builders (pure: return SDK create/batch params) ----------
 
 export function outageCreate({ pin, startedAtMs, area = "", note = "", source = "user", device, signed }) {
@@ -63,7 +72,7 @@ export function confirmCreate({ outageKey, pin, kind, atMs, source = "user", dev
   };
 }
 
-export function cutLogCreate({ outageKey, pin, startedAtMs, endedAtMs, confirmers, origin, area = "", note = "", source = "user", device, signed }) {
+export function cutLogCreate({ outageKey, pin, startedAtMs, endedAtMs, confirmers, origin, area = "", note = "", source = "user", device, signed, salt }) {
   if (!(endedAtMs > startedAtMs)) throw new Error("a cut must end after it starts");
   if (!["live", "backfill"].includes(origin)) throw new Error(`bad origin: ${origin}`);
   const attributes = {
@@ -84,8 +93,9 @@ export function cutLogCreate({ outageKey, pin, startedAtMs, endedAtMs, confirmer
     contentType: "application/json",
     attributes,
     expires: cutLogExpiry(),
-    // A published cut record can never be edited, by us or anyone. It can still be extended.
+    // A published cut record can never be edited. Real cuts are also handed to SEAL_ADDRESS (see powerBackBatch).
     flags: { readonly: true, permissionlessExtension: true },
+    ...(salt !== undefined && { salt }),
   };
 }
 
@@ -98,13 +108,19 @@ export function stillDarkBatch({ outageKey, pin, atMs, source = "user", device, 
 }
 
 // "Power's back": write the permanent record; if the caller owns the live report, retire it in the same tx.
-export function powerBackBatch({ outage, endedAtMs, confirmers, callerIsOwner, source = "user", device, signed }) {
+// An address nobody holds a key for. Sealed records have no owner who could delete them.
+export const SEAL_ADDRESS = "0x000000000000000000000000000000000000dEaD";
+
+export function powerBackBatch({ outage, endedAtMs, confirmers, callerIsOwner, source = "user", device, signed, sealKey }) {
   const batch = {
     creates: [cutLogCreate({
       outageKey: outage.key, pin: outage.pin, startedAtMs: outage.startedAtMs, endedAtMs,
-      confirmers, origin: "live", area: outage.area, note: outage.note, source, device, signed,
+      confirmers, origin: "live", area: outage.area, note: outage.note, source: outage.source === "demo" ? "demo" : source, device, signed,
+      salt: sealKey?.salt,
     })],
   };
+  // Same transaction: hand the finished record to the seal address, so nobody (including us) can delete it.
+  if (sealKey) batch.ownershipChanges = [{ entityKey: sealKey.key, newOwner: SEAL_ADDRESS }];
   if (callerIsOwner) batch.deletes = [{ entityKey: outage.key }];
   return batch;
 }
@@ -168,7 +184,7 @@ export function decodeCutLog(e) {
     key: e.key, creator: e.creator, expiresAt: e.expiresAt, outage: val(e, "outage") ?? null,
     pin: val(e, "pin"), startedAtMs: Number(val(e, "started_at_ms")), endedAtMs: Number(val(e, "ended_at_ms")),
     durationMin: val(e, "duration_min"), confirmers: val(e, "confirmers"), origin: val(e, "origin"),
-    source: val(e, "source"), device: val(e, "device") ?? null, signed: body.signed ?? null,
+    source: TEST_RUN_KEYS.has(e.key?.toLowerCase()) ? "demo" : val(e, "source"), device: val(e, "device") ?? null, signed: body.signed ?? null,
     area: str60(body.area), note: str60(body.note),
   };
 }

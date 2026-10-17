@@ -1,0 +1,1 @@
+rejected: EntityMutationError | Transaction failed: entity 0x21510277…2b2dd2 was created readonly, so its contents can never change. Its expiry can still be extended, and it can be transferred or deleted

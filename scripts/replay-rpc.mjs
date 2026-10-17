@@ -39,6 +39,7 @@ function matches(e, query) {
   const attrs = Object.fromEntries(e.attributes.map((a) => [a.name, a.value]));
   return query.split(" AND ").every((p) => {
     let m;
+    if (p.startsWith("(") && p.endsWith(")")) return p.slice(1, -1).split(" OR ").some((x) => matches(e, x));
     if ((m = p.match(/^\$creator = addr\((0x[0-9a-fA-F]{40})\)$/))) return e.creator.toLowerCase() === m[1].toLowerCase();
     if ((m = p.match(/^(\w+) = str\('(.*)'\)$/))) return attrs[m[1]] === m[2];
     if ((m = p.match(/^(\w+) STARTSWITH str\('(.*)'\)$/))) return String(attrs[m[1]] ?? "").startsWith(m[2]);

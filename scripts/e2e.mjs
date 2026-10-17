@@ -46,7 +46,12 @@ let gone = false; try { await pc.getEntity(outage); } catch { gone = true; }
 const confirms = (await fetchAll(pc.select({ key: true, creator: true, attributes: true, payload: true }).where(q.confirmsFor(outage)))).map(decodeConfirm);
 const cut = (await fetchAll(pc.select({ key: true, creator: true, expiresAt: true, attributes: true, payload: true }).where(q.cutLogFor(outage)))).map(decodeCutLog);
 console.log("outage deleted:", gone, "| confirms:", confirms.length, "| cut_log:", cut.map((c) => `${c.key} ${c.durationMin}min confirmers=${c.confirmers}`));
-// readonly check: relay tries to update the cut_log
-let roErr = "no error (UNEXPECTED)"; try { await relayWc.patchEntity({ entityKey: cut[0].key, set: { note_edit: "x" } }); } catch (e) { roErr = (e.shortMessage ?? e.message).split("\n")[0]; }
-console.log("update of readonly cut_log:", roErr);
+// sealed + readonly checks on the finished cut
+const cutEnt = await pc.getEntity(cut[0].key);
+console.log("cut_log owner:", cutEnt.owner, "| creator:", cutEnt.creator, "(owner is the seal address:", cutEnt.owner.toLowerCase() === "0x000000000000000000000000000000000000dead", ")");
+const tryIt = async (name, fn) => { try { const r = await fn(); console.log(name, "-> UNEXPECTED success", r.txHash); } catch (e) { console.log(name, "-> rejected:", (e.shortMessage ?? e.message).split("\n")[0]); } };
+await tryIt("patchEntity by relay (creator, no longer owner)", () => relayWc.patchEntity({ entityKey: cut[0].key, set: { note_edit: "x" } }));
+await tryIt("deleteEntity by relay", () => relayWc.deleteEntity({ entityKey: cut[0].key }));
+const ext2 = await tWc.extendEntity({ entityKey: cut[0].key, expires: ExpirationTime.fromDays(366) });
+console.log("permissionless extend of the sealed cut by a non-owner:", ext2.txHash);
 console.log(JSON.stringify({ outage, cut: cut[0]?.key, explorer: { outage: explorer.entity(outage), cut: explorer.entity(cut[0]?.key), power_back_tx: explorer.tx(pb.txHash), report_tx: explorer.tx(rep.txHash) }, expiry: [e0, e1, e2, e3], ext: ext.txHash, pb: pb.txHash }, null, 1));
