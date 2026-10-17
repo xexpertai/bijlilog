@@ -129,3 +129,12 @@ test("backfill is sealed: the batch hands the new cut to SEAL_ADDRESS", async ()
   assert.equal(b.creates[0].salt, 7n);
   assert.equal(b.creates[0].attributes.source.value ?? b.creates[0].attributes.source, "demo");
 });
+
+test("isRateLimited recognises the Arkiv anonymous-budget rejection, also nested in a cause", async () => {
+  const { isRateLimited } = await import("../server/relay.js");
+  assert.equal(isRateLimited({ status: 429 }), true);
+  assert.equal(isRateLimited({ details: '"ANON_COST_LIMITED"' }), true);
+  assert.equal(isRateLimited(Object.assign(new Error("outer"), { cause: { status: 429 } })), true);
+  assert.equal(isRateLimited(new Error("out of gas")), false);
+  assert.equal(isRateLimited(null), false);
+});

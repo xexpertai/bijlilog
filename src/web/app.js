@@ -5,7 +5,7 @@ import { tiramisu } from "@arkiv-network/sdk/chains";
 import { render } from "@arkiv-network/sdk/query";
 import { http, webSocket, fallback } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { SEAL_ADDRESS, q, decodeOutage, decodeConfirm, decodeCutLog, distinctConfirmers, identityOf, fetchAll, explorer } from "../lib/schema.js";
+import { SEAL_ADDRESS, q, decodeOutage, decodeConfirm, decodeCutLog, decodeNotice, distinctConfirmers, identityOf, fetchAll, explorer } from "../lib/schema.js";
 import { isPincode, isPinPrefix, checkPublicText, checkBackfill } from "../lib/validate.js";
 import { buildComplaint } from "../lib/complaint.js";
 import { summarize, minutesByDayIST, istDate, istTime, toCSV } from "../lib/stats.js";
@@ -32,7 +32,7 @@ let deviceKey = store.get("bijlilog.deviceKey");
 if (!/^0x[0-9a-f]{64}$/i.test(deviceKey ?? "")) { deviceKey = generatePrivateKey(); store.set("bijlilog.deviceKey", deviceKey); }
 const device = privateKeyToAccount(deviceKey);
 
-const view = { pin: "", days: 60, confirmed: false, long: false, demo: true, cuts: [], open: [], confirmsBy: new Map(), head: 0n, showAll: false, calAll: false };
+const view = { pin: "", days: 60, confirmed: false, long: false, demo: true, cuts: [], open: [], confirmsBy: new Map(), head: 0n, showAll: false, calAll: false, notices: [] };
 
 // ---------- tiny DOM helper (all chain data goes through textContent) ----------
 function h(tag, props = {}, ...kids) {
@@ -107,6 +107,33 @@ async function loadHistory(pin) {
     "", "// History shown on this page:",
     preds.map((p) => render(p)).join(" AND ") + ` AND $creator = addr(${relays[0]})`,
   ].join("\n");
+}
+
+async function loadNotices() {
+  const raw = await fetchAll(publicClient.select({ key: true, creator: true, expiresAt: true, attributes: true, payload: true })
+    .where(q.plannedNotices()).createdBy(relays[0]));
+  view.notices = raw.map(decodeNotice).filter((n) => n.endMs > Date.now()).sort((a, b) => a.startMs - b.startMs);
+}
+
+// Official notices are a separate record type (planned_notice): blue "OFFICIAL NOTICE" rows, never mixed with resident reports or DEMO rows.
+function renderNotices() {
+  const card = $("notices-card"), box = $("notices"); const list = view.notices;
+  $("notices-count").textContent = t("noticesCount", list.length);
+  const delhi = view.pin.startsWith("110");
+  card.classList.toggle("hot", delhi && list.length > 0);
+  if (delhi && list.length && !card.dataset.touched) card.open = true;
+  if (!list.length) { box.replaceChildren(h("p", { class: "hint" }, t("noticesEmpty"))); return; }
+  box.replaceChildren(...list.map((n) => {
+    const day = dayMonth(istDate(n.startMs)).full;
+    return h("article", { class: "notice" },
+      h("div", { class: "when" }, `${day}, ${istTime(n.startMs)}–${istTime(n.endMs)} IST`),
+      h("div", {}, `${n.area} · ${n.district} (${t("noticeZone")} ${n.zone})`),
+      n.description && h("div", { class: "hint" }, n.description),
+      h("div", { class: "sub" }, h("span", { class: "badge official" }, t("noticesBadge", n.discomName)), " ",
+        h("a", { href: n.sourceUrl, target: "_blank", rel: "noopener" }, t("noticeSrc")), " · ",
+        h("a", { href: explorer.entity(n.key), target: "_blank", rel: "noopener" }, t("chain")), " · ",
+        h("span", { class: "hint" }, t("noticeFetched", istTime(n.fetchedAtMs)))));
+  }));
 }
 
 // ---------- rendering ----------
@@ -227,7 +254,7 @@ function remember(pin) {
 }
 
 function renderAll() {
-  renderStatus(); renderScope(); renderTiles(); renderHeat(); renderHistory(); renderRecent();
+  renderStatus(); renderNotices(); renderScope(); renderTiles(); renderHeat(); renderHistory(); renderRecent();
   $("queries").textContent = view.queries ?? "";
 }
 
@@ -369,6 +396,9 @@ async function init() {
     document.body.append(a); a.click(); a.remove();
   });
 
+  $("notices-card").addEventListener("toggle", () => { $("notices-card").dataset.touched = "1"; });
+  loadNotices().then(renderNotices).catch(() => { $("notices").replaceChildren(h("p", { class: "hint" }, t("loadErr"))); });
+  setInterval(() => loadNotices().then(renderNotices).catch(() => {}), 600_000);
   renderRecent();
   const fromUrl = new URLSearchParams(location.search).get("pin");
   const pin = fromUrl ?? store.get("bijlilog.pin") ?? "411001"; // first visit: show the Pune demo PIN so the page is never empty

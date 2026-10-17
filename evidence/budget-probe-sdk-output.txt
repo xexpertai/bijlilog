@@ -1,0 +1,8 @@
+mode=r0: failed after 710 ms | HttpRequestError | shortMessage=HTTP request failed. | status=429 | details="ANON_COST_LIMITED"
+  ...still waiting after 15 s
+  ...still waiting after 30 s
+  ...still waiting after 45 s
+  ...still waiting after 60 s
+  ...still waiting after 75 s
+mode=r3: no result after 90 s, giving up
+mode=default: ok after 500 ms

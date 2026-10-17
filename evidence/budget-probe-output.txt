@@ -1,0 +1,6 @@
+raw arkiv_query: 429 application/json | ratelimit: limit=10000, remaining=0, reset=3243 | retry-after: 3243
+body: {"error":"ANON_COST_LIMITED","message":"unauthenticated query budget exhausted; get an API key at https://hub.arkiv.network for a monthly quota"}
+
+eth_blockNumber meanwhile: 200 {"jsonrpc":"2.0","id":2,"result":"0xaa33e"}
+SDK query, retryCount=0: failed after 239 ms | HttpRequestError | HTTP request failed. | status 429
+SDK query, retryCount=3: ok

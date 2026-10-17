@@ -88,6 +88,7 @@ input, select { font: inherit; color: var(--ink); background: var(--bg); border:
 .lease b { display: block; height: 100%; background: var(--danger); border-radius: 999px; }
 .badge { display: inline-block; font-size: .72rem; font-weight: 800; letter-spacing: .05em; padding: 2px 8px; border-radius: 6px; background: var(--chip); color: var(--muted); vertical-align: middle; }
 .badge.demo { background: var(--demo-bg); color: var(--demo); }
+.badge.official { background: #e3ecfb; color: #17408b; }
 .badge.ok { color: var(--ok); background: var(--ok-bg); }
 .badge.bad { color: var(--danger); background: var(--danger-bg); }
 .skeleton { border-radius: 20px; height: 150px; background: linear-gradient(90deg, var(--chip), var(--card), var(--chip)); background-size: 200% 100%; animation: shimmer 1.4s infinite; }
@@ -188,3 +189,10 @@ dialog textarea { font: .85rem/1.45 system-ui, "Noto Sans Devanagari", sans-seri
 .langpick .chip { margin: 0; }
 .actions { grid-template-columns: 1fr 1fr; }
 .actions #complaint { grid-column: 1 / -1; }
+
+/* Official discom notices: blue left rule, distinct from resident reports and DEMO rows */
+.notices summary { cursor: pointer; font-weight: 800; }
+.notice { border-left: 5px solid #17408b; padding: 8px 12px; margin: 8px 0; background: #f3f7fe; border-radius: 6px; }
+.notice .when { font-weight: 800; }
+.notice .sub { margin-top: 4px; }
+.notices.hot { border-color: #17408b; }

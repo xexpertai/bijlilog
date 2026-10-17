@@ -8,7 +8,7 @@ import { createPublicClient, createWalletClient } from "@arkiv-network/sdk";
 import { tiramisu } from "@arkiv-network/sdk/chains";
 import { http as httpTransport } from "viem";
 import { privateKeyToAccount, nonceManager } from "viem/accounts";
-import { createRelay, HttpError } from "./relay.js";
+import { createRelay, HttpError, isRateLimited } from "./relay.js";
 import { PROJECT } from "../src/lib/schema.js";
 
 const PORT = Number(process.env.PORT ?? 8080);
@@ -16,7 +16,9 @@ const ROOT = fileURLToPath(new URL("../dist/", import.meta.url));
 const RPC = process.env.ARKIV_RPC_URL || undefined; // optional access-key URL; stays server-side
 const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".svg": "image/svg+xml", ".json": "application/json", ".txt": "text/plain; charset=utf-8", ".png": "image/png" };
 
-const publicClient = createPublicClient({ chain: tiramisu, transport: httpTransport(RPC) });
+// Reads fail fast: viem's default retry waits for the RPC's Retry-After header (up to ~30-55 min when the anonymous
+// budget is spent), which hung a relay request for 5 minutes on 17 Oct. See arkiv/friction.md item 8.
+const publicClient = createPublicClient({ chain: tiramisu, transport: httpTransport(RPC, { retryCount: 0, timeout: 20_000 }) });
 let relay = null;
 if (process.env.SPONSOR_PRIVATE_KEY) {
   const account = privateKeyToAccount(process.env.SPONSOR_PRIVATE_KEY, { nonceManager });
@@ -78,6 +80,7 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { "content-type": TYPES[extname(file)] ?? "application/octet-stream", "cache-control": path === "/index.html" ? "no-cache" : "public, max-age=300", ...security });
     res.end(req.method === "HEAD" ? undefined : data);
   } catch (e) {
+    if (!(e instanceof HttpError) && isRateLimited(e)) e = new HttpError(503, "The public Arkiv network is rate-limiting this server right now. Please try again in a few minutes.");
     const status = e instanceof HttpError ? e.status : 500;
     if (status === 500) console.error("error:", e?.shortMessage ?? e?.message);
     send(res, status, { ok: false, error: status === 500 ? "write failed on the Arkiv network; please retry" : e.message, ...(e.extra ?? {}) });

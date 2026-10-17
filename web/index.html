@@ -41,6 +41,12 @@
 
     <section id="status" class="status-wrap" aria-live="polite" aria-busy="true" tabindex="-1"></section>
 
+    <details id="notices-card" class="card notices">
+      <summary><span data-i18n="noticesTitle">Official planned-shutdown notices</span> <span id="notices-count" class="badge official"></span></summary>
+      <p class="hint" data-i18n="noticesNote"></p>
+      <div id="notices" class="timeline"></div>
+    </details>
+
     <section id="report-card" class="card" hidden aria-labelledby="report-title">
       <h2 id="report-title" data-i18n="reportTitle">Report a power cut</h2>
       <form id="report-form" class="stack">

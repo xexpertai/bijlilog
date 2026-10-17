@@ -2,7 +2,7 @@
 // the clearly-labelled "Replay" preview video when the testnet wallet has no GLM. It is never used by the
 // deployed app. It serves the same synthetic data as scripts/seed.mjs, in the real arkiv_query wire format.
 import { jsonToPayload, str, u64, i32, addr, key } from "@arkiv-network/sdk";
-import { cutLogCreate, outageCreate, confirmCreate } from "../src/lib/schema.js";
+import { cutLogCreate, outageCreate, confirmCreate, plannedNoticeCreate } from "../src/lib/schema.js";
 import { PLAN, PLACES } from "./demo-plan.mjs";
 import { RELAYS } from "../src/web/config.js";
 
@@ -31,6 +31,11 @@ export function buildFixture(now = Date.now()) {
   const ok = hexKey(900);
   ents.push(wire(outageCreate({ pin: "411001", startedAtMs: now - 50 * 60_000, area: PLACES["411001"], note: "Demo data", source: "demo", device: fake(0xa1) }), ok, creator, 70 * 30));
   for (const k of [0, 1]) ents.push(wire(confirmCreate({ outageKey: ok, pin: "411001", kind: "still_out", atMs: now - (30 - 10 * k) * 60_000, source: "demo", device: fake(0xb1 + k) }), hexKey(950 + k), creator, 30 * 43200));
+  // UI layout check only (REPLAY_NOTICES=1): two obviously fake notices. Never used for evidence screenshots.
+  if (process.env.REPLAY_NOTICES) for (const [i, area] of ["LAYOUT TEST AREA ONE", "LAYOUT TEST AREA TWO"].entries()) {
+    const n = { district: "TESTVILLE", zone: String(400 + i), area, description: "LAYOUT TEST ONLY", startMs: now - 3_600_000, endMs: now + 2 * 3_600_000 };
+    ents.push(wire(plannedNoticeCreate({ n, discom: { id: "tpddl", name: "Tata Power-DDL", url: "https://example.invalid/" }, noticeId: `t${i}`, fetchedAtMs: now - 60_000 }), hexKey(990 + i), creator, 5400));
+  }
   return ents;
 }
 

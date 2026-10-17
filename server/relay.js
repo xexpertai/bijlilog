@@ -14,6 +14,14 @@ export class HttpError extends Error {
 
 const DAY = 86_400_000;
 
+/** True when the Arkiv RPC refused a call for rate-limit reasons (HTTP 429 / ANON_COST_LIMITED). */
+export const isRateLimited = (e) => {
+  for (let x = e, i = 0; x && i < 4; x = x.cause, i++) {
+    if (x.status === 429 || /ANON_COST_LIMITED|\b429\b/.test(`${x.details ?? ""} ${x.message ?? ""}`)) return true;
+  }
+  return false;
+};
+
 export function createRelay({ publicClient, walletClient, now = () => Date.now(), limits = {} }) {
   const L = { perDevicePerDay: 30, perIpPerDay: 80, globalPerDay: 600, clockSkewMs: 5 * 60_000, ...limits };
   const relayAddress = walletClient.account.address;
@@ -40,7 +48,8 @@ export function createRelay({ publicClient, walletClient, now = () => Date.now()
     let e;
     try {
       e = await publicClient.getEntity(outageKey);
-    } catch {
+    } catch (e) {
+      if (isRateLimited(e)) throw e; // not "expired": the read was refused (mapped to 503 by the server)
       throw new HttpError(404, "that outage report is no longer live (it expired or was closed)");
     }
     const a = e.attributes ?? {};

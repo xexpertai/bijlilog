@@ -2,7 +2,7 @@
 
 **A community-kept power-cut log for your PIN code, stored on [Arkiv](https://arkiv.network).** Built for the Arkiv Global Tour Stop, tracks *Best Indian Use Case*, *Security* and *Censorship Resistance*. Runs on the Arkiv **Tiramisu testnet** (chain 7738577): no real money, no personal data.
 
-> **Live app:** <https://bijlilog-196979752200.us-central1.run.app> · **Demo video:** linked on the Devfolio submission · Contract: [`arkiv/schema.md`](arkiv/schema.md) · Friction report: [`arkiv/friction.md`](arkiv/friction.md)
+> **Live app:** <https://bijlilog-196979752200.us-central1.run.app> · **Demo video:** <https://youtu.be/gLA7tkC8Ukk> · Contract: [`arkiv/schema.md`](arkiv/schema.md) · Friction report: [`arkiv/friction.md`](arkiv/friction.md)
 
 <p align="center"><img src="evidence/ui-r3/phone-calm-lastcut.png" alt="BijliLog on a phone: all clear card with last cut and WhatsApp share" width="260"> <img src="evidence/ui-r3/phone-complaint-dialog.png" alt="Complaint summary dialog showing SAMPLE ONLY for demo records" width="260"></p>
 <p align="center"><sub>Phone view (DEMO data). Right: the complaint summary; with DEMO records it says "SAMPLE ONLY. Do not file."</sub></p>
@@ -13,6 +13,8 @@ Power cuts are an everyday fact for households and small shops across India, and
 - **Report** a cut in one tap; neighbours tap **Still dark** to confirm and keep it live.
 - **History** per PIN (or postal district by prefix): cuts, hours without power, longest cut, how many began at night, filtered by "confirmed by a neighbour" and "4 hours or more".
 - **Get a ready-to-send complaint summary** (English or Hindi, copy or WhatsApp), citing the Electricity (Rights of Consumers) Rules 2020 and the 45-day forum period; if any record is DEMO it is marked "SAMPLE ONLY, do not file". **Or download a CSV**: PIN, start, end and duration of each cut, how many neighbours confirmed it, and an Arkiv entity key with an explorer link, so whoever receives it can verify it independently. A resident can attach it to a complaint to the discom or the Consumer Grievance Redressal Forum set up under the 2020 Rules (which must resolve a grievance within 45 days).
+
+- **Official planned-shutdown notices, next to resident reports.** The app also shows the power company's own published shutdown notices, copied from Tata Power-DDL's public "Scheduled Outage" page by `scripts/ingest-notices.mjs` into a separate Arkiv type (`planned_notice`, `source=official`). They are drawn in blue as "OFFICIAL NOTICE · Tata Power-DDL" with a link to the source page and to the Arkiv entity, and are never mixed with resident reports or DEMO rows. Each notice's lease ends when its shutdown window ends. **Limits:** the page names districts and areas, not PIN codes, so we store no PIN and cannot say a given PIN is affected (the panel opens by itself for 110xxx PINs because that discom serves north and north-west Delhi, and says so); one discom only; a daily snapshot, not a live feed. See [`arkiv/schema.md`](arkiv/schema.md).
 
 **Public sources behind the problem** (cited, not ours):
 - The [Electricity (Rights of Consumers) Rules, 2020](https://www.cag.org.in/blogs/electricity-rights-consumers-rules-2020) require distribution licensees to supply 24x7 power (Rule 10), to communicate scheduled outages by SMS or other electronic means (Rule 16), and provide for automatic compensation (Rule 13). Unscheduled cuts have no neighbour-held record: that gap is what BijliLog fills. (PIB press release on the Rules: <https://www.pib.gov.in/PressReleasePage.aspx?PRID=1682384>.)
@@ -45,13 +47,14 @@ Details and exact queries are in [`arkiv/schema.md`](arkiv/schema.md). In short:
 Needs Node 22.
 ```bash
 npm ci
-npm test                       # 20 tests (data contract, validation, relay logic, server routing)
+npm test                       # 26 tests (data contract, validation, relay logic, server routing)
 npm run build && npm start     # http://localhost:8080 : read-only until a relay key is set
 ```
 To enable writes, put a **testnet-only** key in `.env.local` as `SPONSOR_PRIVATE_KEY=0x...`, fund its address with test GLM at <https://hub.arkiv.network/faucet>, then `npm run dev`.
 ```bash
 node --env-file=.env.local scripts/seed.mjs --live   # synthetic, labelled demo data (add --dry to preview)
 node scripts/seed-demo-pin.mjs 380001 --live-cuts # sealed synthetic "Synthetic demo" history + 3 live-style cuts on one PIN (the PIN shown in the demo video)
+node --env-file=.env.local scripts/ingest-notices.mjs   # official discom notices still open (add --dry to preview, writes nothing)
 node scripts/e2e.mjs                                  # real create/extend/batch run against Tiramisu (relay must be funded)
 node scripts/verify.mjs 411                           # any live cut (2-hour leases) and the full history, read straight from Arkiv
 CONFIRM_PUBLIC=1 scripts/deploy-cloudrun.sh           # optional: Cloud Run (Dockerfile included)

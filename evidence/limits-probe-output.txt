@@ -1,0 +1,8 @@
+string attribute of 100 chars: ok 0x8db3972ef7
+string attribute of 256 chars: FAILED -> InvalidValueError: Invalid str value "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...": 256 UTF-8 bytes exceeds the 128-byte limit on a str. Store the long form in the entity payload and keep a short, queryable key here.
+string attribute of 257 chars: FAILED -> InvalidValueError: Invalid str value "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...": 257 UTF-8 bytes exceeds the 128-byte limit on a str. Store the long form in the entity payload and keep a short, queryable key here.
+string attribute of 1000 chars: FAILED -> InvalidValueError: Invalid str value "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...": 1000 UTF-8 bytes exceeds the 128-byte limit on a str. Store the long form in the entity payload and keep a short, queryable key here.
+batch of 5 creates: ok in 6899 ms, 5 created
+batch of 20 creates: ok in 7023 ms, 20 created
+batch of 50 creates: ok in 7292 ms, 50 created
+batch of 100 creates: ok in 7607 ms, 100 created

@@ -23,6 +23,10 @@ export const cutLogExpiry = () => ExpirationTime.fromDays(LIFETIME.cutLogDays);
 
 export const SOURCES = ["user", "demo"];
 
+// Official planned-shutdown notices copied from a discom's public page (see src/lib/notices.js, scripts/ingest-notices.mjs).
+// Their lease is the notice window itself: the entity leaves Arkiv when the shutdown window ends.
+export const NOTICE_SOURCE = "official";
+
 // Four cut records written by our own test runs on 17 Oct (before the relay learned to pass "demo" through)
 // are stored on chain as source=user. They are synthetic, so every reader shows them as DEMO.
 export const TEST_RUN_KEYS = new Set([
@@ -49,6 +53,30 @@ export function outageCreate({ pin, startedAtMs, area = "", note = "", source = 
     expires: leaseExpiry(),
     // Neighbours who are not the owner may still renew the lease, but can never edit the report.
     flags: { permissionlessExtension: true },
+  };
+}
+
+/** n: a row from parseTpddl(); discom: {id,name,url}. The lease ends at the end of the window (never in the past). */
+export function plannedNoticeCreate({ n, discom, noticeId, fetchedAtMs }) {
+  if (n.endMs - fetchedAtMs < 60_000) throw new Error("notice window already over; nothing to publish");
+  return {
+    payload: jsonToPayload({ v: 1, area: n.area, description: n.description, discom_name: discom.name }),
+    contentType: "application/json",
+    attributes: {
+      project: str(PROJECT),
+      type: str("planned_notice"),
+      source: str(NOTICE_SOURCE),
+      discom: str(discom.id),
+      district: str(n.district),
+      zone: str(n.zone),
+      notice_id: str(noticeId),
+      window_start_ms: u64(n.startMs),
+      window_end_ms: u64(n.endMs),
+      fetched_at_ms: u64(fetchedAtMs),
+      source_url: str(discom.url),
+    },
+    expires: ExpirationTime.atDate(new Date(n.endMs)), // wall-clock expiry: the lease ends with the shutdown window
+    flags: { readonly: true },
   };
 }
 
@@ -142,6 +170,9 @@ export function pinPredicate(pinOrPrefix) {
 }
 
 export const q = {
+  /** Official notices still on chain (the lease already limits them to windows that have not ended). */
+  plannedNotices: () => [...base("planned_notice")],
+  plannedNoticeIds: (ids) => [...base("planned_notice"), ids.length === 1 ? eq("notice_id", str(ids[0])) : or(...ids.map((i) => eq("notice_id", str(i))))],
   liveOutages: (pinOrPrefix) => [...base("outage"), pinPredicate(pinOrPrefix)],
   confirmsFor: (outageKey) => [...base("confirm"), eq("outage", key(outageKey))],
   // One query for any number of outages (OR), so a page load costs a constant number of queries.
@@ -169,6 +200,17 @@ export function decodeOutage(e) {
     pin: val(e, "pin"), startedAtMs: Number(val(e, "started_at_ms")), source: val(e, "source"),
     device: val(e, "device") ?? null, signed: body.signed ?? null,
     area: str60(body.area), note: str60(body.note),
+  };
+}
+
+export function decodeNotice(e) {
+  const body = safeJson(e);
+  return {
+    key: e.key, creator: e.creator, expiresAt: e.expiresAt,
+    discom: val(e, "discom"), discomName: str60(body.discom_name) || val(e, "discom"), district: val(e, "district"), zone: val(e, "zone"),
+    noticeId: val(e, "notice_id"), startMs: Number(val(e, "window_start_ms")), endMs: Number(val(e, "window_end_ms")),
+    fetchedAtMs: Number(val(e, "fetched_at_ms")), sourceUrl: val(e, "source_url"),
+    area: String(body.area ?? "").slice(0, 120), description: String(body.description ?? "").slice(0, 120),
   };
 }
 
