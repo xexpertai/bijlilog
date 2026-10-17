@@ -1,0 +1,14 @@
+node_modules/
+.env.local
+.env
+dist/
+raw/
+*.log
+evidence/tmp/
+
+# internal planning (not part of the public repo)
+FEASIBILITY.md
+REGISTER-NOW.md
+SUBMIT-STEPS.md
+KB/
+HANDOFF.md

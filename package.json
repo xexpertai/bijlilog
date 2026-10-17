@@ -1,0 +1,24 @@
+{
+  "name": "bijlilog",
+  "version": "1.0.0",
+  "description": "BijliLog: a community-kept power-cut log for Indian PIN codes, on Arkiv",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "build": "node scripts/build.mjs",
+    "start": "node server/server.mjs",
+    "dev": "node scripts/build.mjs && node --env-file=.env.local server/server.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@arkiv-network/sdk": "^0.8.1",
+    "viem": "^2.57.4"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.12",
+    "playwright-core": "^1.64.0"
+  }
+}

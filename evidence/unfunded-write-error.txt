@@ -1,0 +1,4 @@
+class: EntityMutationError | isEntityMutationError: true
+message: Transaction failed: Execution error without revert data
+cause: ContractFunctionExecutionError Transaction creation failed.
+details: out of gas: gas required exceeds: 0

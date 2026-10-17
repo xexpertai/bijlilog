@@ -1,0 +1,47 @@
+{
+"_meta": {
+"voice": "af_heart"
+},
+"lines": [
+{
+"id": "s1",
+"text": "Every Indian household knows the power cut. Almost nobody keeps a record, and the only log is usually the utility's."
+},
+{
+"id": "s2",
+"text": "BijliLog is a power-cut log for your PIN code, kept by neighbours, and stored on Arkiv instead of on our server."
+},
+{
+"id": "s3",
+"text": "Type a PIN code. This live cut is labelled demo data. It is a two-hour lease: each neighbour who taps Still dark renews it, and if nobody does, it expires on its own."
+},
+{
+"id": "s4",
+"text": "Neighbours are counted as distinct people, and every record links to the Arkiv explorer, so nobody has to trust us."
+},
+{
+"id": "s5",
+"text": "When power returns, the cut becomes a read-only record kept for a year. Here is the history for this PIN: cuts, hours without power, the longest cut, and night-time cuts."
+},
+{
+"id": "s6",
+"text": "Filter to cuts a neighbour confirmed, or cuts longer than four hours, then download a CSV for your complaint. Every row carries its Arkiv entity key."
+},
+{
+"id": "s7",
+"text": "The page reads Arkiv straight from your browser. These are the exact queries it runs, so you can reproduce them."
+},
+{
+"id": "s8",
+"text": "It works in Hindi too, because this is built for people across India."
+},
+{
+"id": "s9",
+"text": "Why Arkiv? Expiry gives each cut a lease. Permissionless extension lets any neighbour renew it. Atomic batches keep a confirmation and its renewal together. WebSocket events update the page live."
+},
+{
+"id": "s10",
+"text": "A testnet demo with synthetic data, no personal data stored. Open source under MIT, built with AI assistance."
+}
+]
+}

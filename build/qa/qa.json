@@ -1,0 +1,10 @@
+{
+ "duration_s": 86.6,
+ "size": "1920,1080",
+ "lufs": -14.6,
+ "true_peak_dbtp": -1.45,
+ "silences_over_0.6s": [],
+ "freezes": [],
+ "frames_2s": 43,
+ "issues": []
+}
