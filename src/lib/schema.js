@@ -23,7 +23,7 @@ export const cutLogExpiry = () => ExpirationTime.fromDays(LIFETIME.cutLogDays);
 
 export const SOURCES = ["user", "demo"];
 
-// Three cut records written by our own test runs on 17 Oct (before the relay learned to pass "demo" through)
+// Four cut records written by our own test runs on 17 Oct (before the relay learned to pass "demo" through)
 // are stored on chain as source=user. They are synthetic, so every reader shows them as DEMO.
 export const TEST_RUN_KEYS = new Set([
   "0x8599122365d455f6906a7f48e8e40eff23126950eb508be9e5b2d609bf07fc66",
@@ -181,7 +181,7 @@ export function decodeConfirm(e) {
 export function decodeCutLog(e) {
   const body = safeJson(e);
   return {
-    key: e.key, creator: e.creator, expiresAt: e.expiresAt, outage: val(e, "outage") ?? null,
+    key: e.key, creator: e.creator, owner: e.owner ?? null, expiresAt: e.expiresAt, outage: val(e, "outage") ?? null,
     pin: val(e, "pin"), startedAtMs: Number(val(e, "started_at_ms")), endedAtMs: Number(val(e, "ended_at_ms")),
     durationMin: val(e, "duration_min"), confirmers: val(e, "confirmers"), origin: val(e, "origin"),
     source: TEST_RUN_KEYS.has(e.key?.toLowerCase()) ? "demo" : val(e, "source"), device: val(e, "device") ?? null, signed: body.signed ?? null,

@@ -91,3 +91,16 @@ test("demo outages produce demo records; early test-run cuts read as DEMO", asyn
   const e = { key, creator: "0x1", attributes: { source: { type: "str", value: "user" }, pin: { type: "str", value: "411001" } }, toJson: () => ({}) };
   assert.equal(decodeCutLog(e).source, "demo");
 });
+
+import { buildComplaint } from "../src/lib/complaint.js";
+test("complaint summary: real cuts cite the Rules and 45 days; any DEMO record gives the SAMPLE ONLY guard", () => {
+  const mk = (source, d) => ({ key: "0x" + "a".repeat(63) + d, pin: "411001", startedAtMs: Date.UTC(2026, 9, 10, 20, 0) + d * 3600e3, endedAtMs: Date.UTC(2026, 9, 10, 22, 0) + d * 3600e3, durationMin: 120, confirmers: 2, source });
+  const ex = (k) => `https://x/${k}`;
+  const real = buildComplaint({ cuts: [mk("user", 0)], pin: "411001", lang: "en", explorerEntity: ex });
+  assert.equal(real.hasDemo, false);
+  assert.match(real.text, /Rights of Consumers\) Rules, 2020/); assert.match(real.text, /45 days/); assert.doesNotMatch(real.text, /SAMPLE ONLY/);
+  const demo = buildComplaint({ cuts: [mk("user", 0), mk("demo", 1)], pin: "411001", lang: "en", explorerEntity: ex });
+  assert.ok(demo.text.startsWith("SAMPLE ONLY: contains DEMO (synthetic) records. Do not file.")); assert.match(demo.text, /\[DEMO\]/);
+  const hi = buildComplaint({ cuts: [mk("demo", 0)], pin: "411001", lang: "hi", explorerEntity: ex });
+  assert.ok(hi.text.startsWith("केवल नमूना:")); assert.match(hi.text, /45 दिनों/); assert.match(hi.text, /1 पड़ोसी|2 पड़ोसियों/);
+});

@@ -107,3 +107,13 @@ test("backfill validated; daily device limit enforced", async () => {
   assert.equal(m.calls[0][1].attributes.origin.value, "backfill");
   await assert.rejects(relay.handle(await signed(dev, { action: "backfill", started_at_ms: NOW - 5 * 3600e3, ended_at_ms: NOW - 4 * 3600e3, note: "y" })), { status: 429 });
 });
+
+test("report with area starting 'Synthetic' is written as source=demo; normal area as user", async () => {
+  const dev = privateKeyToAccount(generatePrivateKey());
+  let m = mocks(); let relay = createRelay({ ...m, now: () => NOW });
+  await relay.handle(await signed(dev, { action: "report", area: "Synthetic x" }));
+  assert.equal(m.calls[0][1].attributes.source.value ?? m.calls[0][1].attributes.source, "demo");
+  m = mocks(); relay = createRelay({ ...m, now: () => NOW });
+  await relay.handle(await signed(dev, { action: "report", area: "Market road" }));
+  assert.equal(m.calls[0][1].attributes.source.value ?? m.calls[0][1].attributes.source, "user");
+});

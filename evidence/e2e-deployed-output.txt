@@ -1,6 +1,0 @@
-report 0x63253f4d3f7dba217fe0bbfadadc85ee6552ed3ffd47cc3b19c874a7f26754bd [
-  '0xc85a85d5f98bd477f3fddf4fcd261785276189f9f66f682619670d2e03776972'
-]
-still_dark B (neighbour: batch confirm+extend) 0xe91ee020819fa94ecf764fec85f3240c63aa2c97a45b82f4687b3889ddf6e413 counted true
-still_dark A (reporter: extend only) 0x2566de1888077a009dbe9e3c597314b2e51e0315921b70f4d3de8d66a69f444a counted false
-still_dark C (neighbour) 0x15cd9dc3896e1b5f78f75d2716f51e95761dc6cc927120b0c921973af31674e5 counted true

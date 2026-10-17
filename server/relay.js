@@ -76,6 +76,8 @@ export function createRelay({ publicClient, walletClient, now = () => Date.now()
     const signed = { msg, sig };
     const common = { device, signed };
     // Acting on a DEMO outage produces DEMO records, never records that look like real user reports.
+    // Our own scripted test runs put "Synthetic" in the area text, so they are labelled DEMO on chain.
+    const reportSrc = /^synthetic\b/i.test(area.value) ? "demo" : "user";
     const srcOf = (outage) => (outage?.source === "demo" ? "demo" : "user");
 
     return enqueue(async () => {
@@ -87,7 +89,7 @@ export function createRelay({ publicClient, walletClient, now = () => Date.now()
           // One live report per PIN: point the person at the existing one instead of duplicating it.
           const live = await publicClient.select({ key: true }).where(q.liveOutages(a.pin)).createdBy(relayAddress).limit(1).fetch();
           if (live.entities.length) throw new HttpError(409, "a power cut is already live for this PIN; confirm it instead", { outageKey: live.entities[0].key });
-          const r = await walletClient.createEntity(outageCreate({ pin: a.pin, startedAtMs, area: area.value, note: note.value, source: "user", ...common }));
+          const r = await walletClient.createEntity(outageCreate({ pin: a.pin, startedAtMs, area: area.value, note: note.value, source: reportSrc, ...common }));
           return { action: "report", txHash: r.txHash, created: [r.entityKey] };
         }
         case "still_dark": {
@@ -125,7 +127,7 @@ export function createRelay({ publicClient, walletClient, now = () => Date.now()
           const chk = checkBackfill({ startedAtMs, endedAtMs, nowMs: now() });
           if (!chk.ok) throw new HttpError(400, chk.reason);
           const r = await walletClient.createEntity(cutLogCreate({
-            pin: a.pin, startedAtMs, endedAtMs, confirmers: 0, origin: "backfill", area: area.value, note: note.value, source: "user", ...common,
+            pin: a.pin, startedAtMs, endedAtMs, confirmers: 0, origin: "backfill", area: area.value, note: note.value, source: reportSrc, ...common,
           }));
           return { action: "backfill", txHash: r.txHash, created: [r.entityKey] };
         }

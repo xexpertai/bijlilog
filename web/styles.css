@@ -165,7 +165,7 @@ pre { white-space: pre-wrap; background: var(--bg); padding: 10px; border-radius
 @media (min-width: 1024px) {
   main, .top { max-width: 1120px; }
   main { grid-template-columns: 420px minmax(0, 1fr); gap: 20px; align-items: start; }
-  .col-a { position: sticky; top: 12px; }
+  .col-a { position: sticky; top: 16px; align-self: start; }
   .heat { max-width: none; }
   .heat .cell { max-height: 46px; }
   body { font-size: 16px; }
@@ -174,3 +174,17 @@ pre { white-space: pre-wrap; background: var(--bg); padding: 10px; border-radius
   .col-a, .col-b { display: contents; }
   .verify { order: 20; } .demo-note { order: 21; }
 }
+
+.last-cut { margin: 0; }
+.btn.big-ish { width: 100%; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; }
+.legend-proof { margin: 6px 0 0; }
+a.btn { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; text-align: center; }
+dialog { border: 1px solid var(--line); border-radius: 18px; padding: 16px; background: var(--card); color: var(--ink); width: min(560px, calc(100% - 24px)); }
+dialog::backdrop { background: rgba(0,0,0,.45); }
+dialog[open] { display: grid; gap: 10px; }
+dialog h2 { margin: 0; }
+dialog textarea { font: .85rem/1.45 system-ui, "Noto Sans Devanagari", sans-serif; width: 100%; min-height: 220px; border: 1.5px solid var(--line); border-radius: 12px; padding: 10px; background: var(--bg); color: var(--ink); resize: vertical; }
+.langpick { gap: 8px; }
+.langpick .chip { margin: 0; }
+.actions { grid-template-columns: 1fr 1fr; }
+.actions #complaint { grid-column: 1 / -1; }

@@ -91,6 +91,7 @@
         </div>
       </div>
       <div id="heat" class="heat" role="img"></div>
+      <button id="heat-more" class="linkbtn" type="button" hidden></button>
       <div class="legend" aria-hidden="true"><span><i class="l0"></i><span data-i18n="lg0">No cut reported</span></span><span><i class="l1"></i>&lt; 1 <span data-i18n="h">h</span></span><span><i class="l2"></i>1–3 <span data-i18n="h">h</span></span><span><i class="l3"></i>3–6 <span data-i18n="h">h</span></span><span><i class="l4"></i>6+ <span data-i18n="h">h</span></span></div>
     </section>
 
@@ -101,8 +102,10 @@
         <button type="button" class="chip" id="f-long" aria-pressed="false" data-i18n="fLong">4 hours or more</button>
         <button type="button" class="chip" id="f-demo" aria-pressed="true" data-i18n="fDemo">Show demo data</button>
       </div>
+      <p class="hint legend-proof" data-i18n="proofLegend">signed ✓ = the phone's signature checks out · sealed 🔒 = nobody can edit or delete it · on chain ↗ = open in the Arkiv explorer</p>
       <div id="history" class="timeline"></div>
       <div class="btn-row actions">
+        <button id="complaint" class="btn primary" type="button" data-i18n="complaint">Complaint summary</button>
         <button id="csv" class="btn ghost" type="button" data-i18n="csv">Download CSV for a complaint</button>
         <button id="show-backfill" class="btn ghost" type="button" aria-expanded="false" data-i18n="addPast">Add a past cut</button>
       </div>
@@ -122,6 +125,20 @@
     </div>
   </main>
 
+  <dialog id="complaint-dialog" aria-labelledby="complaint-title">
+    <h2 id="complaint-title" data-i18n="complaintTitle">Complaint summary</h2>
+    <p class="hint" data-i18n="complaintHint">Check the text, then copy it or send it on WhatsApp. Nothing is sent until you choose.</p>
+    <div class="grid2 langpick" role="group" aria-label="Language / भाषा">
+      <button type="button" class="chip" id="cp-en" aria-pressed="true">English</button>
+      <button type="button" class="chip" id="cp-hi" aria-pressed="false" lang="hi">हिंदी</button>
+    </div>
+    <textarea id="complaint-text" readonly rows="12"></textarea>
+    <div class="btn-row">
+      <button type="button" class="btn primary" id="cp-copy" data-i18n="copy">Copy</button>
+      <a class="btn ok" id="cp-wa" target="_blank" rel="noopener" href="https://wa.me/" data-i18n="shareWa">Share on WhatsApp</a>
+    </div>
+    <button type="button" class="btn ghost" id="cp-close" data-i18n="close">Close</button>
+  </dialog>
   <div id="toast" role="status" aria-live="polite"></div>
   <footer class="foot">MIT · <span data-i18n="testnetNote">Testnet demo: no real money, no personal data.</span> <span id="live-dot" class="live" hidden><span class="dot"></span><span data-i18n="liveOn">Live updates on</span> <i id="live-text"></i></span></footer>
   <script type="module" src="app.js"></script>

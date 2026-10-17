@@ -5,8 +5,9 @@ import { tiramisu } from "@arkiv-network/sdk/chains";
 import { render } from "@arkiv-network/sdk/query";
 import { http, webSocket, fallback } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { q, decodeOutage, decodeConfirm, decodeCutLog, distinctConfirmers, identityOf, fetchAll, explorer } from "../lib/schema.js";
+import { SEAL_ADDRESS, q, decodeOutage, decodeConfirm, decodeCutLog, distinctConfirmers, identityOf, fetchAll, explorer } from "../lib/schema.js";
 import { isPincode, isPinPrefix, checkPublicText, checkBackfill } from "../lib/validate.js";
+import { buildComplaint } from "../lib/complaint.js";
 import { summarize, minutesByDayIST, istDate, istTime, toCSV } from "../lib/stats.js";
 import { signAction, verifySigned, parseMessage } from "../lib/signing.js";
 import { RELAYS, BLOCK_SECONDS } from "./config.js";
@@ -31,7 +32,7 @@ let deviceKey = store.get("bijlilog.deviceKey");
 if (!/^0x[0-9a-f]{64}$/i.test(deviceKey ?? "")) { deviceKey = generatePrivateKey(); store.set("bijlilog.deviceKey", deviceKey); }
 const device = privateKeyToAccount(deviceKey);
 
-const view = { pin: "", days: 60, confirmed: false, long: false, demo: true, cuts: [], open: [], confirmsBy: new Map(), head: 0n, showAll: false };
+const view = { pin: "", days: 60, confirmed: false, long: false, demo: true, cuts: [], open: [], confirmsBy: new Map(), head: 0n, showAll: false, calAll: false };
 
 // ---------- tiny DOM helper (all chain data goes through textContent) ----------
 function h(tag, props = {}, ...kids) {
@@ -61,7 +62,7 @@ function applyLang() {
 
 // ---------- signature check, shown only on records that are not demo data ----------
 async function proofBadge(rec, expectedAction) {
-  if (rec.source === "demo") return null; // the DEMO badge is shown instead
+  if (rec.source === "demo" && !rec.signed) return null; // the DEMO badge is shown instead (a signed demo row reads "DEMO · signed ✓")
   const viaRelay = relays.some((r) => r.toLowerCase() === (rec.creator ?? "").toLowerCase());
   if (!viaRelay) return h("span", { class: "badge" }, `wallet ${short(rec.creator)}`);
   let ok = false;
@@ -97,7 +98,7 @@ async function loadHistory(pin) {
   const sinceMs = Date.now() - view.days * 86_400_000;
   const filters = { pinOrPrefix: pin, sinceMs, minConfirmers: view.confirmed ? 1 : 0, minDurationMin: view.long ? 240 : 0, source: view.demo ? undefined : "user" };
   const preds = q.history(filters);
-  const raw = await fetchAll(publicClient.select({ key: true, creator: true, expiresAt: true, attributes: true, payload: true }).where(preds).createdBy(relays[0]));
+  const raw = await fetchAll(publicClient.select({ key: true, creator: true, owner: true, expiresAt: true, attributes: true, payload: true }).where(preds).createdBy(relays[0]));
   // The query filters on source=user, but a few early test records (TEST_RUN_KEYS) are stored as user and read as demo.
   view.cuts = raw.map(decodeCutLog).filter((c) => filters.source !== "user" || c.source !== "demo").sort((a, b) => b.startedAtMs - a.startedAtMs);
   view.queries = [
@@ -126,7 +127,9 @@ function renderStatus() {
       h("div", { class: "eyebrow" }, t("calmEyebrow")),
       h("h2", { class: "calm-title" }, t("calmTitle", pin)),
       h("p", { class: "sub" }, t("calmSub")),
-      writesEnabled && h("button", { class: "btn danger big", type: "button", onclick: () => { $("report-card").hidden = false; $("area").focus(); $("report-card").scrollIntoView({ block: "center" }); } }, "⚡ " + t("powerCutHere"))));
+      view.cuts[0] && h("p", { class: "sub last-cut" }, t("lastCut", `${dayMonth(istDate(view.cuts[0].startedAtMs)).full}`, fmtDur(view.cuts[0].durationMin)), view.cuts[0].source === "demo" && " ", view.cuts[0].source === "demo" && h("span", { class: "badge demo" }, t("demo"))),
+      writesEnabled && h("button", { class: "btn danger big", type: "button", onclick: () => { $("report-card").hidden = false; $("area").focus(); $("report-card").scrollIntoView({ block: "center" }); } }, "⚡ " + t("powerCutHere")),
+      h("a", { class: "btn ghost big-ish", target: "_blank", rel: "noopener", href: `https://wa.me/?text=${encodeURIComponent(t("neighbourMsg", pin, `${location.origin}/?pin=${pin}`))}` }, t("tellNeighbours"))));
     return;
   }
   for (const o of view.open) box.append(outageCard(o, true));
@@ -169,7 +172,11 @@ function renderTiles() {
 
 function renderHeat() {
   const days = view.days;
-  const strip = minutesByDayIST(view.cuts, days, Date.now());
+  let strip = minutesByDayIST(view.cuts, days, Date.now());
+  // Phones: a 60-day calendar pushes the history far down, so show the latest 35 days first.
+  const short60 = days === 60 && window.matchMedia("(max-width: 599px)").matches && !view.calAll;
+  if (short60) strip = strip.slice(-35);
+  const more = $("heat-more"); more.hidden = !short60; more.textContent = t("showAll60", days);
   const level = (m) => (m === 0 ? 0 : m < 60 ? 1 : m < 180 ? 2 : m < 360 ? 3 : 4); // matches the legend: none, <1 h, 1-3 h, 3-6 h, 6+ h
   const dows = lang === "hi" ? ["सो", "मं", "बु", "गु", "शु", "श", "र"] : ["M", "T", "W", "T", "F", "S", "S"];
   const cells = dows.map((d) => h("div", { class: "dow", "aria-hidden": "true" }, d));
@@ -203,6 +210,7 @@ async function renderHistory() {
           c.origin === "backfill" && h("span", { class: "badge" }, t("backfill")),
           pin.length < 6 && h("span", { class: "badge" }, c.pin),
           h("span", {}, t("confirmedBy", c.confirmers)), proof,
+          c.owner?.toLowerCase() === SEAL_ADDRESS.toLowerCase() && h("span", { class: "badge ok", title: t("sealedTip") }, t("sealed")),
           h("a", { href: explorer.entity(c.key), target: "_blank", rel: "noopener" }, t("chain")))),
       h("div", { class: `dur${c.durationMin >= 240 ? " long" : ""}` }, fmtDur(c.durationMin))));
   }
@@ -336,6 +344,23 @@ async function init() {
     const note = checkPublicText($("bf-note").value);
     if (!note.ok) return toast(note.reason);
     act(e.submitter, { action: "backfill", pin: view.pin, started_at_ms: s, ended_at_ms: en, note: note.value });
+  });
+  $("heat-more").addEventListener("click", () => { view.calAll = true; renderHeat(); });
+  const dlg = $("complaint-dialog"); let cpLang = lang;
+  const fillComplaint = () => {
+    const { text } = buildComplaint({ cuts: view.cuts, pin: view.pin, lang: cpLang, explorerEntity: explorer.entity });
+    $("complaint-text").value = text;
+    $("cp-wa").href = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    pressed($("cp-en"), cpLang === "en"); pressed($("cp-hi"), cpLang === "hi");
+  };
+  $("complaint").addEventListener("click", () => { if (!isPincode(view.pin)) return toast(t("enterPin")); cpLang = lang; fillComplaint(); dlg.showModal(); });
+  $("cp-en").addEventListener("click", () => { cpLang = "en"; fillComplaint(); });
+  $("cp-hi").addEventListener("click", () => { cpLang = "hi"; fillComplaint(); });
+  $("cp-close").addEventListener("click", () => dlg.close());
+  $("cp-copy").addEventListener("click", async () => {
+    const ta = $("complaint-text");
+    try { await navigator.clipboard.writeText(ta.value); } catch { ta.select(); document.execCommand("copy"); }
+    toast(t("copied"));
   });
   $("csv").addEventListener("click", () => {
     const blob = new Blob([toCSV(view.cuts, explorer.entity)], { type: "text/csv" });

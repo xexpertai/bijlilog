@@ -1,6 +1,6 @@
 // Real end-to-end write run against Tiramisu through the running relay server (needs funded relay).
 // Usage: node --env-file=.env.local scripts/e2e.mjs [baseUrl]   (start the server first: npm run dev / local-server.sh)
-// Records are labelled "TEST RUN" (source=user, signed by throwaway device keys). Prints tx hashes and keys.
+// Records start with "Synthetic" in the area, which the relay writes as source=demo (signed by throwaway device keys). Prints tx hashes and keys.
 // Permissionless extension: a throwaway TESTNET key funded with 0.05 GLM extends the lease without owning it.
 import { createPublicClient, createWalletClient, ExpirationTime } from "@arkiv-network/sdk";
 import { tiramisu } from "@arkiv-network/sdk/chains";
@@ -20,7 +20,7 @@ const post = async (acct, fields) => {
   const j = await r.json(); if (!r.ok) throw new Error(`${fields.action}: ${r.status} ${j.error}`); return j;
 };
 const out = {};
-const rep = await post(A, { action: "report", area: "TEST RUN (synthetic)", note: "end-to-end check" }); out.report = rep; console.log("report", rep.txHash, rep.created);
+const rep = await post(A, { action: "report", area: "Synthetic e2e test run", note: "end-to-end check" }); out.report = rep; console.log("report", rep.txHash, rep.created);
 const outage = rep.created[0];
 const expiry = async () => Number((await pc.getEntity(outage)).expiresAt);
 const e0 = await expiry();
