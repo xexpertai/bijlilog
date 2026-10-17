@@ -1,0 +1,35 @@
+report 0xa7d6c5cd4135bfff6e28658be2aa688fd44e7d612d8759b7cd0e2dee9caf3c8d [
+  '0x95db8a6ff3f4276d451a078395e8c8dd72f44e31c88710804b007fb0ae62cf08'
+]
+still_dark B (neighbour: batch confirm+extend) 0xb45231c630befdee9dda269b40107aae82284e09ca6873cde6b09320c5cbfd7c counted true
+still_dark A (reporter: extend only) 0xf7e8b228cd3298fab146c7a20de631a42f1babd9258f9d35bdfcff21019c6b33 counted false
+still_dark C (neighbour) 0xcf803b2445124704efda27621d241c41af94efac35fc40000d6b472c5c740bb6 counted true
+lease expiry block: 683330 -> 683336 -> 683342
+permissionless extend by non-owner 0xb3cfcd67D6Cbb269C7a3374B2D1702a604B17310 0x928e0e2108875d93485ec6ab9d33a47a56b97a510287adfb7dbc52e72acce044 owner is 0x440701BE95a49e2701BCedb39934a638dF0AE217 expiry -> 683350
+power_back (batch: cut_log + delete outage) 0x341018bf9cd5b865b4044cee93440ae0eca4e7ba8c183a128ecdd593f695ca94 confirmers 2 created [
+  '0x4b8a90a498ed78f6f55f2d84d5b4cde3a0d2b8418c09a14045c5629fc10d8862'
+] deleted [
+  '0x95db8a6ff3f4276d451a078395e8c8dd72f44e31c88710804b007fb0ae62cf08'
+]
+outage deleted: true | confirms: 2 | cut_log: [
+  '0x4b8a90a498ed78f6f55f2d84d5b4cde3a0d2b8418c09a14045c5629fc10d8862 1min confirmers=2'
+]
+update of readonly cut_log: relayWc.updateEntity is not a function
+{
+ "outage": "0x95db8a6ff3f4276d451a078395e8c8dd72f44e31c88710804b007fb0ae62cf08",
+ "cut": "0x4b8a90a498ed78f6f55f2d84d5b4cde3a0d2b8418c09a14045c5629fc10d8862",
+ "explorer": {
+  "outage": "https://tiramisu.explorer.arkiv.network/entity/0x95db8a6ff3f4276d451a078395e8c8dd72f44e31c88710804b007fb0ae62cf08",
+  "cut": "https://tiramisu.explorer.arkiv.network/entity/0x4b8a90a498ed78f6f55f2d84d5b4cde3a0d2b8418c09a14045c5629fc10d8862",
+  "power_back_tx": "https://tiramisu.explorer.arkiv.network/tx/0x341018bf9cd5b865b4044cee93440ae0eca4e7ba8c183a128ecdd593f695ca94",
+  "report_tx": "https://tiramisu.explorer.arkiv.network/tx/0xa7d6c5cd4135bfff6e28658be2aa688fd44e7d612d8759b7cd0e2dee9caf3c8d"
+ },
+ "expiry": [
+  683330,
+  683336,
+  683342,
+  683350
+ ],
+ "ext": "0x928e0e2108875d93485ec6ab9d33a47a56b97a510287adfb7dbc52e72acce044",
+ "pb": "0x341018bf9cd5b865b4044cee93440ae0eca4e7ba8c183a128ecdd593f695ca94"
+}

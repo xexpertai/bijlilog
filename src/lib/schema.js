@@ -1,7 +1,7 @@
 // BijliLog data contract on Arkiv. One place for entity types, attributes, lifetimes and queries.
 // Shared by the browser app, the seed script and the judge CLI. See /arkiv/schema.md.
 import { ExpirationTime, jsonToPayload, str, u64, i32, key, addr } from "@arkiv-network/sdk";
-import { eq, gte, lte, startsWith } from "@arkiv-network/sdk/query";
+import { eq, gte, lte, startsWith, or } from "@arkiv-network/sdk/query";
 
 export const PROJECT = "bijlilog-v1";
 export const EXPLORER = "https://tiramisu.explorer.arkiv.network";
@@ -128,6 +128,9 @@ export function pinPredicate(pinOrPrefix) {
 export const q = {
   liveOutages: (pinOrPrefix) => [...base("outage"), pinPredicate(pinOrPrefix)],
   confirmsFor: (outageKey) => [...base("confirm"), eq("outage", key(outageKey))],
+  // One query for any number of outages (OR), so a page load costs a constant number of queries.
+  confirmsForAny: (keys) => [...base("confirm"), keys.length === 1 ? eq("outage", key(keys[0])) : or(...keys.map((k) => eq("outage", key(k))))],
+  cutLogForAny: (keys) => [...base("cut_log"), keys.length === 1 ? eq("outage", key(keys[0])) : or(...keys.map((k) => eq("outage", key(k))))],
   cutLogFor: (outageKey) => [...base("cut_log"), eq("outage", key(outageKey))],
   history: ({ pinOrPrefix, sinceMs, untilMs, minConfirmers = 0, minDurationMin = 0, source }) => {
     const p = [...base("cut_log"), pinPredicate(pinOrPrefix), gte("started_at_ms", u64(sinceMs))];

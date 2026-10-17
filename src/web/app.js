@@ -3,7 +3,7 @@
 import { createPublicClient } from "@arkiv-network/sdk";
 import { tiramisu } from "@arkiv-network/sdk/chains";
 import { render } from "@arkiv-network/sdk/query";
-import { http, webSocket } from "viem";
+import { http, webSocket, fallback } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { q, decodeOutage, decodeConfirm, decodeCutLog, distinctConfirmers, identityOf, fetchAll, explorer } from "../lib/schema.js";
 import { isPincode, isPinPrefix, checkPublicText, checkBackfill } from "../lib/validate.js";
@@ -21,7 +21,8 @@ const store = {
 let lang = store.get("bijlilog.lang") === "hi" ? "hi" : "en";
 const t = (k, ...a) => { const v = STR[lang][k] ?? STR.en[k]; return typeof v === "function" ? v(...a) : v; };
 
-const publicClient = createPublicClient({ chain: tiramisu, transport: http() });
+// Direct from the browser first; if the anonymous Arkiv RPC budget is exhausted, fall back to the same-origin read proxy.
+const publicClient = createPublicClient({ chain: tiramisu, transport: fallback([http(), http(`${location.origin}/rpc`)], { retryCount: 0 }) });
 let relays = [...RELAYS];
 let writesEnabled = false;
 
@@ -76,10 +77,17 @@ async function loadNow(pin) {
     .where(q.liveOutages(pin)).createdBy(relays[0]));
   const outages = raw.map(decodeOutage).sort((a, b) => b.startedAtMs - a.startedAtMs);
   // Hide leases already closed by someone else's "Power's back" (they expire on their own shortly).
-  const open = [];
-  for (const o of outages) {
-    const closed = await publicClient.select({ key: true }).where(q.cutLogFor(o.key)).createdBy(relays[0]).limit(1).fetch();
-    if (!closed.entities.length) open.push(o);
+  // Two queries for all outages together (OR on the outage key), not two per outage.
+  let open = outages, confirmsBy = new Map();
+  if (outages.length) {
+    const keys = outages.map((o) => o.key);
+    const closedRaw = await fetchAll(publicClient.select({ key: true, attributes: true }).where(q.cutLogForAny(keys)).createdBy(relays[0]));
+    const closed = new Set(closedRaw.map((e) => e.attributes?.outage?.value?.toLowerCase()));
+    open = outages.filter((o) => !closed.has(o.key.toLowerCase()));
+    if (open.length) {
+      const all = (await fetchAll(publicClient.select({ key: true, creator: true, attributes: true, payload: true }).where(q.confirmsForAny(open.map((o) => o.key))).createdBy(relays[0]))).map(decodeConfirm);
+      for (const c of all) { const k = (c.outage ?? "").toLowerCase(); confirmsBy.set(k, [...(confirmsBy.get(k) ?? []), c]); }
+    }
   }
   box.replaceChildren();
   const fullPin = pin.length === 6;
@@ -87,8 +95,7 @@ async function loadNow(pin) {
   if (!open.length) { box.append(h("p", { class: "calm" }, fullPin ? t("noCut") : t("noCutArea"))); }
   if (!fullPin) box.append(h("p", { class: "hint" }, t("areaReadOnly")));
   for (const o of open) {
-    const confirms = (await fetchAll(publicClient.select({ key: true, creator: true, attributes: true, payload: true }).where(q.confirmsFor(o.key)))).map(decodeConfirm)
-      .filter((c) => relays.some((r) => r.toLowerCase() === c.creator.toLowerCase()));
+    const confirms = (confirmsBy.get(o.key.toLowerCase()) ?? []).filter((c) => relays.some((r) => r.toLowerCase() === c.creator.toLowerCase()));
     const n = distinctConfirmers(confirms, identityOf(o, relays), relays);
     const leftMin = Math.max(0, Math.round(Number(o.expiresAt - head) * BLOCK_SECONDS / 60));
     const sinceMin = Math.max(1, Math.round((Date.now() - o.startedAtMs) / 60000));

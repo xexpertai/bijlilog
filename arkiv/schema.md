@@ -35,7 +35,7 @@ Attributes: `project`, `type=confirm`, `outage` (**key** of the outage), `pin`, 
 | `origin` | str | `live` (closed from a live outage) or `backfill` (past cut added by hand) |
 | `outage` | key | the outage it closed (live origin only) |
 
-**Expiration: 365 days.** **Flags: `readonly` + `permissionlessExtension`**: nobody, including the operator, can edit a published cut, and anyone can pay to keep the record alive longer.
+**Expiration: 365 days.** **Flags: `readonly` + `permissionlessExtension`**: nobody, including the operator, can edit a published cut (tested: a patch is rejected with "was created readonly, so its contents can never change"; the owner can still delete it, which would be visible on chain), and anyone can pay to keep the record alive longer.
 
 ## Writes (all via the Arkiv SDK 0.8.1)
 | Action | Arkiv call | Why this shape |
@@ -49,8 +49,8 @@ Attributes: `project`, `type=confirm`, `outage` (**key** of the outage), `pin`, 
 ## Queries the app runs (rendered by the SDK's `render()`; also shown in the app)
 1. Live cuts for a PIN (exact) or postal district (prefix):
    `project = str('bijlilog-v1') AND type = str('outage') AND pin = str('<pin>')` or `pin STARTSWITH str('<prefix>')`, plus `$creator = addr(<relay>)`.
-2. Neighbours who confirmed: `project = str('bijlilog-v1') AND type = str('confirm') AND outage = key(<outage key>)`.
-3. Has this lease already been closed? `... AND type = str('cut_log') AND outage = key(<outage key>)`.
+2. Neighbours who confirmed, for all live outages in one query: `project = str('bijlilog-v1') AND type = str('confirm') AND (outage = key(<k1>) OR outage = key(<k2>))`, plus `$creator = addr(<relay>)`.
+3. Has a lease already been closed? `... AND type = str('cut_log') AND (outage = key(<k1>) OR ...)`, plus `$creator`. (Two queries for any number of outages: the public RPC charges a flat 100 cost units per `arkiv_query`, so a page load costs 4 queries.)
 4. History for a PIN or prefix, all optional filters shown:
    `project = str('bijlilog-v1') AND type = str('cut_log') AND pin STARTSWITH str('<prefix>') AND started_at_ms >= u64(<since>) AND source = str('user') AND confirmers >= i32(1) AND duration_min >= i32(240)`, plus `$creator = addr(<relay>)`.
 5. Pagination: `fetchAll()` follows the cursor, 200 per page.

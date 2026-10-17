@@ -2,6 +2,7 @@
 // Every record has source="demo" and is shown as DEMO in the app. These are NOT real outages.
 // Usage: node --env-file=.env.local scripts/seed.mjs [--dry] [--live]
 //   (default)  cut_log history for 3 PIN codes over the last 28 days
+//   --only-live  just the live outage + confirms (refresh the 2-hour lease before a demo)
 //   --live     also open 1 live outage + 2 neighbour confirmations (2-hour lease: run just before a demo)
 import { createPublicClient, createWalletClient } from "@arkiv-network/sdk";
 import { tiramisu } from "@arkiv-network/sdk/chains";
@@ -10,7 +11,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { PLAN, PLACES } from "./demo-plan.mjs";
 import { cutLogCreate, outageCreate, confirmCreate } from "../src/lib/schema.js";
 
-const dry = process.argv.includes("--dry"), live = process.argv.includes("--live");
+const dry = process.argv.includes("--dry"), onlyLive = process.argv.includes("--only-live"), live = onlyLive || process.argv.includes("--live");
 const HOUR = 3_600_000, DAY = 24 * HOUR, now = Date.now();
 const creates = [];
 for (const [pin, rows] of Object.entries(PLAN)) for (const [ago, hourIst, durMin, confirmers] of rows) {
@@ -31,6 +32,7 @@ if (bal === 0n) { console.error("Wallet has 0 test GLM. Claim at hub.arkiv.netwo
 // Synthetic neighbour identities (not real keys, no signatures): lets "N neighbours confirmed" count distinct people.
 const fake = (n) => "0x" + n.toString(16).padStart(40, "0");
 const out = { txs: [], entities: [] };
+if (onlyLive) creates.length = 0;
 for (let i = 0; i < creates.length; i += 5) {
   const r = await wc.executeBatch({ creates: creates.slice(i, i + 5) });
   out.txs.push(r.txHash); out.entities.push(...r.createdEntities);

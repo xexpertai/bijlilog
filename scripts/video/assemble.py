@@ -5,7 +5,7 @@ frames every 2 s at 1280 px + contact sheets in <build>/qa/."""
 import json, pathlib, re, shutil, subprocess, sys
 B = pathlib.Path(sys.argv[1]); OUT = pathlib.Path(sys.argv[2]) if len(sys.argv) > 2 else B / "bijlilog-demo.mp4"
 story = json.load(open(pathlib.Path(__file__).with_name("story.json"))); dur = json.load(open(B / "durations.json"))
-PAD, LEAD = 0.45, 0.15
+PAD, LEAD = 0.30, 0.10
 def run(*a, **k): return subprocess.run(a, check=True, capture_output=True, text=True, **k)
 seg = B / "seg"; shutil.rmtree(seg, ignore_errors=True); seg.mkdir()
 vids, auds = [], []

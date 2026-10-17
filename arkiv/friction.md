@@ -1,6 +1,6 @@
 # Friction report: building BijliLog on Arkiv
 
-Versions: `@arkiv-network/sdk` 0.8.1, `viem` 2.57.4, Node 22, Tiramisu testnet (chain 7738577, 0x7614d1), 17 Oct 2026 (block ~670k). Every item below was run, not assumed; the probes are in `scripts/probe-friction.mjs`, `scripts/probe-gas.mjs` and `scripts/probe-read.mjs`. Read paths were exercised against the live testnet. Write paths (create, extend, batch) need test GLM; see items 1 and 2 for why that is a human step.
+Versions: `@arkiv-network/sdk` 0.8.1, `viem` 2.57.4, Node 22, Tiramisu testnet (chain 7738577, 0x7614d1), 17 Oct 2026 (block ~670k). Every item below was run, not assumed; the probes are in `scripts/probe-friction.mjs`, `scripts/probe-gas.mjs` and `scripts/probe-read.mjs`. Read paths and write paths were both run on the live testnet on 17 Oct 2026 (seed: `evidence/seed-output.txt`; end-to-end run through the relay: `evidence/e2e-output.txt`, script `scripts/e2e.mjs`). Writes need test GLM, which is a human step: see items 1 and 2.
 
 ## Things that got in the way
 
@@ -33,9 +33,31 @@ Versions: `@arkiv-network/sdk` 0.8.1, `viem` 2.57.4, Node 22, Tiramisu testnet (
 - **Expected:** `kind != str('restored')`.
 - **Actual:** the docs say `!=` is reserved but not implemented; the workaround is `NOT (attr = value)`, which also matches entities that never set the attribute. BijliLog does not need it (it selects with `=`), so this was read from the docs and not exercised in the app.
 
+### 6. "readonly" blocks edits but not deletion, which the flag name does not suggest
+- **Surface:** creation flag `readonly` (SDK 0.8.1), `patchEntity`, `deleteEntity`.
+- **Expected:** a record created `readonly` is immutable, so I planned to tell users "nobody, including us, can change or remove a published cut".
+- **Actual:** edits are rejected, with a very clear message: `EntityMutationError: Transaction failed: entity 0x4b8a90a4…0d8862 was created readonly, so its contents can never change. Its expiry can still be extended, and it can be transferred or deleted`. So the owner can still delete it. That is documented in the error, but I only learned it by testing, and BijliLog's copy now says "only the relay wallet could delete it, and that would be visible on chain".
+- **Steps:** `node --env-file=.env.local scripts/probe-readonly.mjs <cut_log entity key>`.
+- **Fix idea:** state the delete/transfer exceptions next to the flag in the docs, and consider a stronger flag (or burning ownership) for records that must be tamper-evident including against the owner.
+
+### 7. The anonymous read budget is small, and the rejection is not a JSON-RPC error
+- **Surface:** public Tiramisu HTTP RPC without an access key; `arkiv_query`.
+- **Expected:** the docs say the public RPC "works without one, at the default rate limit"; I expected a limit I could size an app against, and a standard JSON-RPC error when it is hit.
+- **Actual:** after about a day of development (many page loads and video-recording runs, each page load issuing several `arkiv_query` calls from the browser) every query returned HTTP 429 with the body `{"error":"ANON_COST_LIMITED","message":"unauthenticated query budget exhausted; get an API key at https://hub.arkiv.network for a monthly quota"}`. That body is not a JSON-RPC error object (`error` is a string, no code/id), so SDK callers see a generic failure. The response headers are useful and complete (`RateLimit: limit=10000, remaining=0, reset=1328`, `Retry-After: 1328`, plus `Arkiv-Cost` and `Arkiv-Quota-Used-Percent` exposed to browsers), but the size of the budget, what one query costs and the window are not in the Access Keys page.
+- **Steps:** loop page loads of the app against the public RPC until `curl -i -X POST https://rpc.tiramisu.db-chain.testnet.arkiv.network -d '{"jsonrpc":"2.0","id":1,"method":"arkiv_query","params":["type = str('"'"'x'"'"')",{"limit":"0x1","select":{"key":true}}]}'` returns 429.
+- **Cost measured:** every `arkiv_query` costs a flat 100 units in the `Arkiv-Cost` header (an `eth_blockNumber` costs none), so the 10000-unit budget is about 100 queries. Our first version issued 7 queries for a page with two live cuts (N+1); we now OR the outage keys together, so a page load is 4 queries.
+- **What we did:** the browser app reads directly and falls back to a same-origin read-only proxy (`/rpc`, allowlist of read methods) that can use a server-side access key.
+- **Fix idea:** document the anonymous budget and per-query cost in Access Keys, and return a JSON-RPC error (with `data.retryAfter`) so SDK clients can surface "rate limited, retry in N s".
+
 ## Paths tested that worked as documented
 | Surface | What was run | Result |
 |---|---|---|
+| Seed (17 Oct) | `executeBatch({creates})` x4 (5 entities each) + `createEntity` + one more batch: 19 entities | all succeeded; relay balance went from 9.0 to 8.9976 GLM in total, i.e. about 0.0001 GLM per entity |
+| Atomic batch with extension | relay `still_dark` by a neighbour: `executeBatch({creates:[confirm], extensions:[outage]})` | one tx; confirm created and lease renewed; the app showed "3 neighbours" and a fresh 2 h lease |
+| Reporter or repeat tap | `extendEntity` only | tx ok; not counted as a new witness (by our logic) |
+| Lease semantics | three extensions seconds apart | expiry block 683330 -> 683336 -> 683342: each extension sets a new expiry counted from now (documented), it does not add 2 h on top |
+| **Permissionless extension** | a throwaway testnet key that does not own the entity (funded with 0.05 GLM) called `extendEntity` on a `permissionlessExtension` outage | succeeded (tx `0x928e0e2108875d93485ec6ab9d33a47a56b97a510287adfb7dbc52e72acce044`), owner stayed the relay wallet, expiry -> 683350 |
+| Atomic batch with delete | "Power's back": `executeBatch({creates:[cut_log], deletes:[outage]})` | one tx; outage gone from `getEntity` (NoEntityFoundError), cut_log present with `confirmers=2` |
 | Install | `npm i @arkiv-network/sdk viem` | 38 s, no peer-dependency errors |
 | HTTP RPC | `eth_chainId`, `eth_blockNumber`, `arkiv_query` through the SDK | chain id 0x7614d1; block 670424 on 17 Oct |
 | Query predicates | `eq` + `startsWith` + `gte` on `u64` and `i32`, `.createdBy()`, `.limit()` on an unused project name | all return 0 results without errors |

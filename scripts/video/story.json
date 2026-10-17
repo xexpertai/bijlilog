@@ -17,15 +17,15 @@
 },
 {
 "id": "s4",
-"text": "Neighbours are counted as distinct people, and every record links to the Arkiv explorer, so nobody has to trust us."
+"text": "A neighbour taps Still dark. The confirmation and the lease renewal land in one atomic transaction, and every record links to the Arkiv explorer."
 },
 {
 "id": "s5",
-"text": "When power returns, the cut becomes a read-only record kept for a year. Here is the history for this PIN: cuts, hours without power, the longest cut, and night-time cuts."
+"text": "Power's back, and the cut becomes a read-only record, kept for a year and signed by the device that wrote it, with cuts, hours without power, the longest cut, and night-time cuts counted for this PIN."
 },
 {
 "id": "s6",
-"text": "Filter to cuts a neighbour confirmed, or cuts longer than four hours, then download a CSV for your complaint. Every row carries its Arkiv entity key."
+"text": "Filter to cuts a neighbour confirmed, or longer than four hours, then download a CSV for your complaint. Every row carries its Arkiv entity key."
 },
 {
 "id": "s7",
@@ -37,7 +37,7 @@
 },
 {
 "id": "s9",
-"text": "Why Arkiv? Expiry gives each cut a lease. Permissionless extension lets any neighbour renew it. Atomic batches keep a confirmation and its renewal together. WebSocket events update the page live."
+"text": "Why Arkiv? Expiry gives each cut a lease. Permissionless extension lets any neighbour renew it. Atomic batches keep writes together. WebSocket events update the page live."
 },
 {
 "id": "s10",

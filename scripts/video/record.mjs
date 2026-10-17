@@ -55,7 +55,7 @@ const smooth = (page, y, ms) => page.evaluate(([y, ms]) => new Promise((res) => 
   const step = (t) => { const k = Math.min(1, (t - t0) / ms); scrollTo(0, y0 + (y - y0) * (k * k * (3 - 2 * k))); k < 1 ? requestAnimationFrame(step) : res(); };
   requestAnimationFrame(step);
 }), [y, ms]);
-const el = (page, sel) => page.evaluate((s) => document.querySelector(s).getBoundingClientRect().top + scrollY, sel);
+const el = async (page, sel) => { await page.waitForSelector(sel, { timeout: 20000 }); return page.evaluate((s) => document.querySelector(s).getBoundingClientRect().top + scrollY, sel); };
 
 // ---- cards (animated with CSS so there is always motion) ----
 const CSS = `*{box-sizing:border-box}body{margin:0;width:1920px;height:1080px;background:#11151d;color:#e8ebf1;font:500 72px/1.3 system-ui,sans-serif;display:flex;flex-direction:column;justify-content:center;padding:0 170px;overflow:hidden}
@@ -84,12 +84,15 @@ await card("s2", `<div class="l" style="${d(0.2)}">${BOLT}</div><h1 class="l" st
   await finish("s3", s, ms - 4000);
 }
 { const s = await newScene("s4"); const p = s.page;
-  await smooth(p, (await el(p, ".outage .meta")) - 250, 1800);
-  await finish("s4", s, total("s4") - 1800); }
-{ const s = await newScene("s5"); const p = s.page;
-  await smooth(p, (await el(p, "#history-card")) - 60, 2000);
-  await sleep(2500); await smooth(p, (await el(p, "#history")) - 300, 2500);
-  await finish("s5", s, total("s5") - 7000); }
+  await smooth(p, (await el(p, ".outage .meta")) - 250, 1500);
+  let used = 1500;
+  if (MODE === "live") { await p.click(".btn-row .btn:not(.ok)"); await sleep(5000); used += 5000; }
+  await finish("s4", s, total("s4") - used); }
+{ const s = await newScene("s5"); const p = s.page; let used = 0;
+  if (MODE === "live") { await smooth(p, (await el(p, "#now-card")) - 40, 700); await p.click(".btn-row .btn.ok"); await sleep(5500); used += 6200; }
+  await smooth(p, (await el(p, "#history-card")) - 60, 1800); used += 1800;
+  await sleep(1500); used += 1500; await smooth(p, (await el(p, "#history")) - 300, 2200); used += 2200;
+  await finish("s5", s, total("s5") - used); }
 { const s = await newScene("s6"); const p = s.page;
   await smooth(p, (await el(p, "#history-card")) - 60, 1200);
   await sleep(1500); await p.check("#f-confirmed"); await sleep(2200); await p.check("#f-long"); await sleep(2500);
@@ -110,7 +113,7 @@ await card("s9", `<h1 class="l" style="${d(0.1)};font-size:104px">Why <span clas
 <div class="li l" style="${d(3)}"><span class="k">Permissionless extension</span>: any neighbour renews it</div>
 <div class="li l" style="${d(6)}"><span class="k">Atomic batch</span>: confirm + renew land together</div>
 <div class="li l" style="${d(8.8)}"><span class="k">WebSocket events</span>: the page updates live</div>`);
-await card("s10", `<div class="l" style="${d(0.2)}">${BOLT}</div><h1 class="l" style="${d(0.4)}">BijliLog</h1><div class="l sub" style="${d(1)}">Arkiv Tiramisu testnet · synthetic demo data · no personal data</div><div class="l sub" style="${d(2.2)}">Open source, MIT · built with AI assistance (Claude Code)</div><div class="l sub" style="${d(3.4)};color:#ffd866">${MODE === "replay" ? "REPLAY PREVIEW: recorded from a local fixture of the synthetic data" : "Live app and repository links are in the submission"}</div>`);
+await card("s10", `<div class="l" style="${d(0.2)}">${BOLT}</div><h1 class="l" style="${d(0.4)}">BijliLog</h1><div class="l sub" style="${d(1)}">Arkiv Tiramisu testnet · synthetic demo data · no personal data</div><div class="l sub" style="${d(2.2)}">Open source, MIT · built with AI assistance (Claude Code) · Narration: synthetic voice</div><div class="l sub" style="${d(3.4)};color:#ffd866">${MODE === "replay" ? "REPLAY PREVIEW: recorded from a local fixture of the synthetic data" : "Live app and repository links are in the submission"}</div>`);
 await browser.close();
 // playwright names clips randomly: move them to <id>.webm
 import { readdirSync } from "node:fs";

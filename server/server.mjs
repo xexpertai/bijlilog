@@ -26,6 +26,7 @@ if (process.env.SPONSOR_PRIVATE_KEY) {
   console.log("no SPONSOR_PRIVATE_KEY: read-only mode (relay disabled)");
 }
 
+const READ_METHODS = new Set(["eth_chainId", "eth_blockNumber", "eth_getBalance", "eth_getBlockByNumber", "arkiv_query", "arkiv_getEntityCount", "arkiv_getBlockTiming"]);
 const security = {
   "x-content-type-options": "nosniff",
   "referrer-policy": "no-referrer",
@@ -46,9 +47,19 @@ async function readJson(req, max = 8192) {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://x");
   try {
-    if (url.pathname === "/healthz") return send(res, 200, { ok: true });
+    if (url.pathname === "/health") return send(res, 200, { ok: true });
     if (url.pathname === "/api/config") {
       return send(res, 200, { project: PROJECT, chainId: 7738577, relay: relay?.relayAddress ?? null, writesEnabled: !!relay });
+    }
+    if (url.pathname === "/rpc" && req.method === "POST") {
+      // Read-only fallback for browsers whose anonymous Arkiv RPC budget is used up (ANON_COST_LIMITED).
+      // Forwards a small allowlist of read methods to the Arkiv RPC, with the server-side access key if one is set.
+      const body = await readJson(req, 16384);
+      const calls = Array.isArray(body) ? body : [body];
+      if (calls.length > 10 || !calls.every((c) => READ_METHODS.has(c?.method))) throw new HttpError(403, "method not allowed on the read proxy");
+      const r = await fetch(RPC ?? "https://rpc.tiramisu.db-chain.testnet.arkiv.network", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+      res.writeHead(r.status, { "content-type": "application/json", "cache-control": "no-store", ...security });
+      return res.end(await r.text());
     }
     if (url.pathname === "/api/action" && req.method === "POST") {
       if (!relay) throw new HttpError(503, "writes are disabled on this deployment");

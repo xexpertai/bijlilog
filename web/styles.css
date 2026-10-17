@@ -61,9 +61,9 @@ input, select { font: inherit; color: var(--ink); background: var(--bg); border:
 .badge.bad { color: var(--danger); }
 .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .calm { padding: 14px; border-radius: 12px; background: var(--chip); }
-.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(124px, 1fr)); gap: 8px; margin-bottom: 12px; }
 .tile { background: var(--bg); border-radius: 10px; padding: 10px 12px; }
-.tile b { display: block; font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.tile b { display: block; font-size: 1.2rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .tile span { font-size: .78rem; color: var(--muted); }
 .strip { display: flex; align-items: flex-end; gap: 2px; height: 64px; margin: 4px 0 14px; border-bottom: 1px solid var(--line); }
 .strip i { flex: 1; background: var(--bar); border-radius: 3px 3px 0 0; min-height: 1px; opacity: .9; }
